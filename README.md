@@ -26,6 +26,24 @@ Initialize the versioned market schema:
 go run ./cmd/marketdb -db market.db -command init
 ```
 
+Sync a five-year, multi-asset daily universe from Twelve Data. The API key is
+read only from the environment and is never accepted as a command-line flag:
+
+```sh
+export TWELVE_DATA_API_KEY="your-key"
+go run ./cmd/marketdb \
+  -db market.db -command sync \
+  -symbols AAPL,MSFT,SPY -interval 1d \
+  -start-date 2021-08-29 -end-date 2026-08-27
+```
+
+The sync is restart-safe. It writes one bounded provider window at a time,
+persists a checkpoint after every committed page, overlaps two periods when it
+resumes to capture provider corrections, imports dividends and splits, updates
+realized forecasts, recomputes affected features, and stores a quality report.
+The default client budget is eight requests per minute; use
+`-requests-per-minute` only when your provider plan permits a different limit.
+
 Run the deterministic end-to-end demo. It ingests 60 candles, computes a
 technical feature snapshot, runs a leakage-safe walk-forward baseline, persists
 every forecast and evaluation, and prints application and storage metrics:
@@ -56,6 +74,12 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | Composite key `(symbol, interval, timestamp)` | Index design and efficient ordered time-series access |
 | Fixed-point prices and ratios | Deterministic storage without floating-point money corruption |
 | Atomic, idempotent ingestion | Data-pipeline reliability and safe provider retries |
+| Bounded live-provider windows + durable checkpoints | Restart-safe ETL without a workflow framework |
+| Shared rate limiter, exponential backoff, `Retry-After` | Respectful and resilient external API integration |
+| Persisted ingestion runs and provider-credit counts | Auditable jobs and operational observability |
+| NYSE session calendar and persisted quality reports | Missing, unexpected, duplicate, invalid, and outlier detection |
+| Split/dividend lineage and exact split factors | Corporate-action correctness without silent double adjustment |
+| Incremental feature watermarks + correction overlap | Efficient recomputation while preserving point-in-time behavior |
 | OHLCV invariants and bounded queries | Data quality and defensive API design |
 | Versioned atomic migrations | Evolvable application schemas |
 | Point-in-time features | Prevention of future-data leakage |
@@ -70,7 +94,9 @@ point-in-time evidence and produces a cited thesis. This avoids asking an LLM
 to hallucinate prices or silently use future information.
 
 See [architecture](docs/ARCHITECTURE.md), [delivery roadmap](docs/ROADMAP.md),
-and [benchmark methodology](docs/BENCHMARKS.md).
+[Twelve Data operations](docs/PROVIDER_TWELVEDATA.md),
+[Phase 2 validation](docs/PHASE2_VALIDATION.md), and
+[benchmark methodology](docs/BENCHMARKS.md).
 
 ---
 
@@ -204,5 +230,6 @@ learning, not production workloads.
 | `query.go` | expression evaluator and statement interpreter |
 | `cmd/byodb` | interactive command-line shell |
 | `stats.go` | page, file, transaction, and catalog metrics |
-| `market/` | market schema, repository, features, forecasts, evaluation, LLM boundary |
-| `cmd/marketdb` | market ingestion, feature, backtest, and demo CLI |
+| `market/` | market schema, provider contract, resumable sync, quality, features, forecasts, evaluation, LLM boundary |
+| `market/provider/twelvedata` | live REST adapter, response parsing, rate limiting, retries, and contract tests |
+| `cmd/marketdb` | provider sync, CSV import, feature, quality, backtest, and demo CLI |

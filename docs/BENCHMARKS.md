@@ -1,0 +1,41 @@
+# Benchmark methodology
+
+Run all correctness checks first:
+
+```sh
+go test ./...
+go test -race ./...
+go vet ./...
+```
+
+Then collect allocation-aware microbenchmarks:
+
+```sh
+go test ./market -run '^$' \
+  -bench 'BenchmarkCandle(Ingestion|RangeScan)$' \
+  -benchmem -count 3 -benchtime=5x
+```
+
+The ingestion benchmark writes batches of 100 candles. The range benchmark
+loads 2,000 candles in bounded setup batches and repeatedly retrieves the most
+recent 252 through the composite primary index.
+
+Record CPU, Go version, commit, sample count, and raw output whenever publishing
+numbers. Do not compare results across machines as if they were the same test.
+The current copy-on-write engine favors educational clarity and durability over
+bulk-ingestion throughput; allocation profiles should guide Phase 6 rather than
+being hidden.
+
+## Validation snapshot
+
+Captured on 2026-08-29 with Go 1.23.12 on an AMD EPYC 9V74 runner. These are
+development-machine results, not cross-machine performance claims.
+
+| Operation | Result | Allocations |
+| --- | ---: | ---: |
+| Atomic ingestion of 100 candles | 26.31 ms/op median (~3.8k rows/s) | 46.82 MB, 15,806 allocs/op |
+| Indexed retrieval of latest 252 candles | 2.48 ms/op median | 1.87 MB, 5,290 allocs/op |
+
+Command used three samples of five iterations with `-benchmem`. The range latency is already suitable
+for an interactive student demo; ingestion allocations are the clearest target
+for a future profiling and optimization write-up.

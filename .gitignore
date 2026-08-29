@@ -1,0 +1,9 @@
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+byodb-cli
+marketdb
+coverage.out
