@@ -1,0 +1,208 @@
+# byodb: database engine + market intelligence platform
+
+This repository now contains two connected projects:
+
+1. **A database engine built from scratch in Go**: copy-on-write B+ trees,
+   durable pages, recovery, transactions, relational tables, secondary indexes,
+   and a SQL-like query language.
+2. **A market intelligence system built on that engine**: validated OHLCV
+   ingestion, indexed time-series queries, point-in-time features, model
+   lineage, walk-forward forecasts, evaluation metrics, and auditable LLM
+   analysis.
+
+The combination is the portfolio story: the application does not hide behind
+PostgreSQL or an ORM. Its domain data, features, predictions, and LLM outputs
+are stored on a database whose storage and transaction layers are implemented
+in this repository.
+
+> This is an educational engineering and research project, not financial
+> advice or a production trading system.
+
+## Market intelligence quick start
+
+Initialize the versioned market schema:
+
+```sh
+go run ./cmd/marketdb -db market.db -command init
+```
+
+Run the deterministic end-to-end demo. It ingests 60 candles, computes a
+technical feature snapshot, runs a leakage-safe walk-forward baseline, persists
+every forecast and evaluation, and prints application and storage metrics:
+
+```sh
+go run ./cmd/marketdb -db market.db -command demo -symbol AAPL -interval 1d
+```
+
+Import real provider-neutral CSV data:
+
+```sh
+go run ./cmd/marketdb \
+  -db market.db -command import -file ./prices.csv \
+  -symbol AAPL -interval 1d -source my-provider
+
+go run ./cmd/marketdb -db market.db -command features -symbol AAPL -interval 1d
+go run ./cmd/marketdb -db market.db -command backtest -symbol AAPL -interval 1d
+```
+
+CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
+`adjusted_close` is optional. Timestamps may be Unix seconds, RFC 3339, or
+`YYYY-MM-DD`.
+
+## What the market layer demonstrates
+
+| Capability | Engineering signal |
+| --- | --- |
+| Composite key `(symbol, interval, timestamp)` | Index design and efficient ordered time-series access |
+| Fixed-point prices and ratios | Deterministic storage without floating-point money corruption |
+| Atomic, idempotent ingestion | Data-pipeline reliability and safe provider retries |
+| OHLCV invariants and bounded queries | Data quality and defensive API design |
+| Versioned atomic migrations | Evolvable application schemas |
+| Point-in-time features | Prevention of future-data leakage |
+| Model runs + immutable forecast identity | Experiment tracking and reproducibility |
+| Walk-forward baseline | Honest ML evaluation before sophisticated models |
+| MAE, MAPE, direction accuracy, dataset hash | Measurable model performance and lineage |
+| Typed `LLMClient` + input digest | Provider independence, testability, and LLM auditability |
+| Runtime counters + database page stats | Observability and benchmarkable systems work |
+
+The quantitative model owns numeric prediction. The LLM consumes versioned,
+point-in-time evidence and produces a cited thesis. This avoids asking an LLM
+to hallucinate prices or silently use future information.
+
+See [architecture](docs/ARCHITECTURE.md), [delivery roadmap](docs/ROADMAP.md),
+and [benchmark methodology](docs/BENCHMARKS.md).
+
+---
+
+## Database engine
+
+`byodb` is a from-scratch database in Go, built along the progression in James
+Smith's *Build Your Own Database From Scratch in Go* (2nd edition):
+
+1. a copy-on-write B+tree with fixed 4 KiB pages;
+2. a durable, single-file key/value store;
+3. versioned free-page reuse;
+4. atomic transactions and snapshot isolation;
+5. optimistic conflict detection for concurrent writers;
+6. relational tables, range scans, and secondary indexes; and
+7. a recursively parsed SQL-like query language.
+
+The implementation is educational but complete enough to embed in a Go
+program or use through its interactive shell. It uses only the Go standard
+library.
+
+## Build and test
+
+Go 1.22 or newer is recommended.
+
+```sh
+go test ./...
+go build -o byodb-cli ./cmd/byodb
+```
+
+Run the shell against a database file:
+
+```sh
+./byodb-cli -db demo.db
+```
+
+Or execute one statement:
+
+```sh
+./byodb-cli -db demo.db -c "SELECT * FROM users;"
+```
+
+## Quick start
+
+```sql
+CREATE TABLE users (
+    id int,
+    name string,
+    age int,
+    INDEX (age, name),
+    PRIMARY KEY (id),
+);
+
+INSERT INTO users (id, name, age) VALUES
+    (1, 'Ada', 36),
+    (2, 'Grace', 37),
+    (3, 'Ken', 82);
+
+SELECT id, name, age + 1 AS next_age
+FROM users
+INDEX BY age >= 30 AND age < 50
+FILTER name != 'Grace'
+LIMIT 20;
+
+UPDATE users SET age = age + 1 INDEX BY id = 1;
+DELETE FROM users INDEX BY id = 3;
+```
+
+`INDEX BY` is intentionally explicit, as in the textbook. It selects a primary
+or secondary index and controls traversal direction. `FILTER` is evaluated
+after indexed retrieval. `WHERE` is accepted as an alias for `FILTER`.
+
+## Embedded API
+
+```go
+db, err := byodb.OpenDB("app.db")
+if err != nil { /* handle */ }
+defer db.Close()
+
+result, err := db.Exec("SELECT * FROM users INDEX BY id >= 1 AND id < 10;")
+```
+
+Multiple statements can be grouped atomically:
+
+```go
+var tx byodb.DBTX
+if err := db.Begin(&tx); err != nil { /* handle */ }
+
+if _, err := tx.Exec("UPDATE accounts SET balance = balance - 10 INDEX BY id = 1;"); err != nil {
+    db.Abort(&tx)
+    // handle
+}
+if _, err := tx.Exec("UPDATE accounts SET balance = balance + 10 INDEX BY id = 2;"); err != nil {
+    db.Abort(&tx)
+    // handle
+}
+if err := db.Commit(&tx); err != nil {
+    // ErrConflict means the transaction should be retried from Begin.
+}
+```
+
+The lower-level `KV`, `KVTX`, `Record`, `TableDef`, and `Scanner` APIs are also
+available for applications that do not want to use the query language.
+
+## Storage and recovery design
+
+- B+tree nodes use the byte layout from chapters 4-5 and split by encoded size.
+- Data pages are copy-on-write; a transaction never overwrites its live tree.
+- Commits write all new pages and call `fsync` before publishing a root.
+- Two checksummed meta pages alternate by version. Opening the file chooses the
+  newest valid version, so a torn final meta write falls back to the prior root.
+- Free pages carry the version at which they became unreachable. They are not
+  reused while a transaction based on an older snapshot is active.
+- Transactions keep updates in an in-memory B+tree. At commit, updates are
+  checked against newer write history and then applied to the current root.
+
+This is a single-process embedded database. Do not open the same file from two
+processes simultaneously; inter-process locking and a network protocol are
+outside the book's scope. Back up important data: the project is intended for
+learning, not production workloads.
+
+## Project map
+
+| File | Book concepts |
+| --- | --- |
+| `btree.go` | B+tree nodes, insertion, splitting, deletion, merging, iterators |
+| `pager.go` | page file, crash recovery, meta pages, free-page persistence |
+| `kv.go` | atomic transactions, snapshots, combined iteration, conflicts |
+| `codec.go` | order-preserving integer/string and tuple encoding |
+| `table.go` | schemas, records, primary keys, scans, secondary indexes |
+| `parser.go` | recursive-descent SQL-like parser |
+| `query.go` | expression evaluator and statement interpreter |
+| `cmd/byodb` | interactive command-line shell |
+| `stats.go` | page, file, transaction, and catalog metrics |
+| `market/` | market schema, repository, features, forecasts, evaluation, LLM boundary |
+| `cmd/marketdb` | market ingestion, feature, backtest, and demo CLI |
