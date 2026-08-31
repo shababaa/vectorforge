@@ -61,6 +61,7 @@ func validJSONObject(value string) bool {
 
 func (r *Repository) PutForecast(forecast Forecast) error {
 	var err error
+	forecast.RunID = strings.TrimSpace(forecast.RunID)
 	if forecast.Symbol, err = normalizeSymbol(forecast.Symbol); err != nil {
 		return err
 	}
@@ -69,6 +70,9 @@ func (r *Repository) PutForecast(forecast Forecast) error {
 	}
 	if strings.TrimSpace(forecast.RunID) == "" || forecast.AsOfTimestamp <= 0 || forecast.HorizonSeconds <= 0 || forecast.TargetTimestamp <= forecast.AsOfTimestamp {
 		return fmt.Errorf("%w: forecast identity and timestamps are invalid", ErrInvalidMarketData)
+	}
+	if forecast.TargetTimestamp-forecast.AsOfTimestamp != forecast.HorizonSeconds || forecast.HasActual {
+		return fmt.Errorf("%w: horizon must match target; use EvaluateForecastsAt for actual outcomes", ErrInvalidMarketData)
 	}
 	if forecast.BaselineClose <= 0 || forecast.PredictedClose <= 0 || forecast.LowerBound <= 0 || forecast.UpperBound < forecast.LowerBound || forecast.ConfidencePPM < 0 || forecast.ConfidencePPM > RatioScale {
 		return fmt.Errorf("%w: forecast prices or confidence are invalid", ErrInvalidMarketData)
@@ -82,8 +86,22 @@ func (r *Repository) PutForecast(forecast Forecast) error {
 	if forecast.CreatedAt == 0 {
 		forecast.CreatedAt = r.now().UTC().Unix()
 	}
-	_, err = r.db.Upsert(tableForecasts, forecastRecord(forecast))
-	return err
+	return r.writeTransaction(func(tx *byodb.DBTX) error {
+		key := (&byodb.Record{}).AddString("run_id", forecast.RunID).AddString("symbol", forecast.Symbol).AddString("interval", forecast.Interval).AddInt64("as_of_timestamp", forecast.AsOfTimestamp).AddInt64("horizon_seconds", forecast.HorizonSeconds)
+		exists, err := tx.Get(tableForecasts, key)
+		if err != nil {
+			return err
+		}
+		if exists {
+			old := forecastFromRecord(*key)
+			if old.TargetTimestamp != forecast.TargetTimestamp || old.BaselineClose != forecast.BaselineClose || old.PredictedClose != forecast.PredictedClose || old.LowerBound != forecast.LowerBound || old.UpperBound != forecast.UpperBound || old.ConfidencePPM != forecast.ConfidencePPM {
+				return fmt.Errorf("%w: original forecast is immutable", ErrInvalidMarketData)
+			}
+			return nil // Idempotent retry preserves realization and creation fields.
+		}
+		_, err = tx.Set(tableForecasts, forecastRecord(forecast), byodb.MODE_INSERT_ONLY)
+		return err
+	})
 }
 
 // ForecastsAt returns all horizons emitted by one model run for a point in

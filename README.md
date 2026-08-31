@@ -52,6 +52,36 @@ every forecast and evaluation, and prints application and storage metrics:
 go run ./cmd/marketdb -db market.db -command demo -symbol AAPL -interval 1d
 ```
 
+Run the Phase 3 prediction experiment on a separate synthetic dataset. It fits
+and tunes persistence, moving-average, ridge, and gradient-boosted-stump models;
+reserves calibration and test periods; evaluates frozen and rolling-refit
+forecasts; and persists replayable models and an evidence-based model card:
+
+```sh
+go run ./cmd/marketdb -db prediction-demo.db \
+  -command experiment-demo -format markdown
+
+# Use previously ingested real data, ending at a completed daily bar.
+go run ./cmd/marketdb -db market.db -command experiment \
+  -symbol AAPL -interval 1d -to 1787788800 -format markdown
+```
+
+The output gives an experiment ID and fitted model run IDs. Retrieve the full
+card later or use a saved model to forecast the next NYSE daily session:
+
+```sh
+go run ./cmd/marketdb -db market.db -command model-card \
+  -run-id EXPERIMENT_ID -format markdown
+
+go run ./cmd/marketdb -db market.db -command predict -run-id MODEL_RUN_ID
+```
+
+`predict` uses the latest stored completed bar; it does not download new data or
+refit the model. Its interval is an empirical uncertainty estimate, not a
+probability of profit. See the [prediction runbook](docs/PREDICTION.md),
+[synthetic example card](docs/EXAMPLE_MODEL_CARD.md), and
+[five-year AAPL validation card](docs/AAPL_MODEL_CARD.md).
+
 Import real provider-neutral CSV data:
 
 ```sh
@@ -85,6 +115,11 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | Point-in-time features | Prevention of future-data leakage |
 | Model runs + immutable forecast identity | Experiment tracking and reproducibility |
 | Walk-forward baseline | Honest ML evaluation before sophisticated models |
+| Purged chronological train/tune/calibration/test partitions | Explicit separation of model selection and final evaluation |
+| Ridge + gradient-boosted stumps implemented in Go | Numerical linear algebra and learning-algorithm fundamentals |
+| Frozen holdout and rolling/expanding refit comparisons | Reproducible time-series evaluation |
+| Checksummed chunked model artifacts | Replayable fitted parameters within the database's 3 KB row-value limit |
+| RMSE, interval coverage, width, calibration gap, regime slices | Evaluation beyond a single headline accuracy score |
 | MAE, MAPE, direction accuracy, dataset hash | Measurable model performance and lineage |
 | Typed `LLMClient` + input digest | Provider independence, testability, and LLM auditability |
 | Runtime counters + database page stats | Observability and benchmarkable systems work |
@@ -230,6 +265,6 @@ learning, not production workloads.
 | `query.go` | expression evaluator and statement interpreter |
 | `cmd/byodb` | interactive command-line shell |
 | `stats.go` | page, file, transaction, and catalog metrics |
-| `market/` | market schema, provider contract, resumable sync, quality, features, forecasts, evaluation, LLM boundary |
+| `market/` | market schema, provider contract, resumable sync, quality, features, prediction experiments, model cards, LLM boundary |
 | `market/provider/twelvedata` | live REST adapter, response parsing, rate limiting, retries, and contract tests |
 | `cmd/marketdb` | provider sync, CSV import, feature, quality, backtest, and demo CLI |

@@ -21,6 +21,7 @@ const (
 	tableQuality     = "market_data_quality_runs"
 	tableIngestRuns  = "market_ingestion_runs"
 	tableFeatureWM   = "market_feature_watermarks"
+	tableArtifacts   = "market_model_artifacts"
 )
 
 type schemaMigration struct {
@@ -55,6 +56,9 @@ func migrations() []schemaMigration {
 	return []schemaMigration{
 		{version: 1, name: "initial market intelligence schema", tables: initialTableDefinitions()},
 		{version: 2, name: "provider sync, corporate actions, quality, and incremental features", tables: phaseTwoTableDefinitions()},
+		{version: 3, name: "replayable prediction artifacts and model cards", tables: []*byodb.TableDef{
+			{Name: tableArtifacts, Cols: []string{"run_id", "kind", "chunk", "payload", "digest", "chunks"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64}, PKeys: 3, Indexes: [][]string{{"run_id", "kind", "chunk"}}},
+		}},
 	}
 }
 

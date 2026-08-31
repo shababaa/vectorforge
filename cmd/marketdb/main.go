@@ -21,7 +21,7 @@ import (
 
 func main() {
 	dbPath := flag.String("db", "market.db", "database file")
-	command := flag.String("command", "init", "init, sync, import, features, features-incremental, quality, backtest, or demo")
+	command := flag.String("command", "init", "init, sync, import, features, features-incremental, quality, backtest, demo, experiment, experiment-demo, model-card, or predict")
 	symbol := flag.String("symbol", "AAPL", "market symbol")
 	symbols := flag.String("symbols", "", "comma-separated symbols for provider sync")
 	interval := flag.String("interval", "1d", "candle interval")
@@ -35,7 +35,18 @@ func main() {
 	requestsPerMinute := flag.Int("requests-per-minute", 8, "provider request budget per minute")
 	syncActions := flag.Bool("corporate-actions", true, "sync dividends and splits")
 	syncFeatures := flag.Bool("compute-features", true, "incrementally compute features after sync")
+	horizonBars := flag.Int("horizon-bars", 1, "prediction target in observed bars, not calendar days")
+	trainFraction := flag.Float64("train-fraction", .6, "initial chronological training fraction")
+	validationFraction := flag.Float64("validation-fraction", .2, "fraction divided into tuning and calibration")
+	refitEvery := flag.Int("refit-every", 63, "test origins between walk-forward refits")
+	trainWindow := flag.Int("train-window", 0, "rolling eligible training/calibration samples; zero means expanding")
+	coverage := flag.Float64("coverage", .9, "nominal empirical prediction-interval coverage")
+	runID := flag.String("run-id", "", "experiment ID for model-card; fitted model run ID for predict")
+	outputFormat := flag.String("format", "json", "experiment/model-card output: json or markdown")
 	flag.Parse()
+	if *outputFormat != "json" && *outputFormat != "markdown" {
+		log.Fatal("-format must be json or markdown")
+	}
 
 	db, err := byodb.OpenDB(*dbPath)
 	if err != nil {
@@ -111,9 +122,47 @@ func main() {
 		mustPrint(report, err)
 	case "demo":
 		mustPrint(runDemo(repository, *symbol, *interval), nil)
+	case "experiment", "experiment-demo":
+		selectedSymbol, selectedInterval := *symbol, *interval
+		if *command == "experiment-demo" {
+			if _, err := repository.IngestCandles(market.PredictionDemoCandles()); err != nil {
+				log.Fatal(err)
+			}
+			selectedSymbol, selectedInterval = "SYNTH", "1d"
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		config := market.PredictionConfig{HorizonBars: *horizonBars, TrainFraction: *trainFraction, ValidationFraction: *validationFraction, RefitEvery: *refitEvery, TrainWindow: *trainWindow, Coverage: *coverage}
+		card, err := repository.RunPredictionExperiment(ctx, selectedSymbol, selectedInterval, *from, *to, config)
+		printModelCard(card, *outputFormat, err)
+	case "model-card":
+		if *runID == "" {
+			log.Fatal("-run-id is required for model-card")
+		}
+		card, err := repository.PredictionModelCard(*runID)
+		printModelCard(card, *outputFormat, err)
+	case "predict":
+		if *runID == "" {
+			log.Fatal("-run-id is required for predict")
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		forecast, err := repository.PredictNextDaily(ctx, *runID, *asOf, market.NewNYSECalendar())
+		mustPrint(forecast, err)
 	default:
 		log.Fatalf("unknown command %q", *command)
 	}
+}
+
+func printModelCard(card market.PredictionModelCard, format string, err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	if format == "markdown" {
+		fmt.Print(market.ModelCardMarkdown(card))
+		return
+	}
+	mustPrint(card, nil)
 }
 
 func syncRange(startDate, endDate string, from, to int64) (int64, int64, error) {

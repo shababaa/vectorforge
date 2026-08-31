@@ -40,17 +40,34 @@ repeatable CLI accepts a multi-asset universe, but the final AAPL/MSFT/SPY live
 artifact requires a personal Twelve Data key because the public demo key is
 restricted to demo symbols. See [Phase 2 validation](PHASE2_VALIDATION.md).
 
-## Phase 3 — prediction service
+## Phase 3 — prediction service (complete for the educational baseline scope)
 
-- Time-based train/validation/test splits
-- Linear, moving-average, and gradient-boosted baselines
-- Rolling-window feature generation without leakage
-- Hyperparameter/config tracking through `market_model_runs`
-- MAE, RMSE, MAPE, direction accuracy, calibration, and benchmark comparison
-- Walk-forward and regime-segmented evaluation
+- [x] Chronological train/tune/calibration/test splits with horizon-aware label purging
+- [x] Persistence, moving-average, standardized ridge, and gradient-boosted regression stumps
+- [x] Shared point-in-time rolling features for training and saved-model inference
+- [x] Eight deterministic candidate configurations; selection uses tuning MAE only
+- [x] Hyperparameter/config tracking through `market_model_runs`
+- [x] Schema-v3 checksummed model artifacts, normalization state, and model cards
+- [x] MAE, RMSE, MAPE, three-way direction accuracy, interval coverage/width/gap,
+  and persistence-relative error comparisons
+- [x] Frozen holdout plus rolling/expanding walk-forward evaluation and regime slices
+- [x] Calendar-aware saved-model daily forecasting with immutable prediction writes
+- [x] Reopen/replay, future-label perturbation, horizon, cancellation, corruption,
+  and deterministic-repeat tests
 
 Exit criteria: produce a reproducible model card and show whether each model
 beats the persistence baseline after costs are excluded from the claim.
+
+Evidence: [synthetic model card](EXAMPLE_MODEL_CARD.md) and
+[AAPL model card](AAPL_MODEL_CARD.md), captured on 2026-08-31. The AAPL run uses
+1,254 candles and 248 test origins. Tuning selected ridge, which did **not** beat
+persistence on the frozen holdout (MAE 3.133439 vs 3.128548). Boosted stumps had
+0.58% lower holdout MAE, but that observation does not retroactively change model
+selection and is not a statistically established or tradable advantage.
+
+The Phase 2 multi-asset live acceptance remains open. Phase 3 does not promote a
+model into production or claim profitable trading. See [methodology and
+operations](PREDICTION.md) for bounds, interval caveats, and exact commands.
 
 ## Phase 4 — grounded LLM analyst
 

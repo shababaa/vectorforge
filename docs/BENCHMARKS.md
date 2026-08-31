@@ -39,3 +39,24 @@ development-machine results, not cross-machine performance claims.
 Command used three samples of five iterations with `-benchmem`. The range latency is already suitable
 for an interactive student demo; ingestion allocations are the clearest target
 for a future profiling and optimization write-up.
+
+## Phase 3 model-fit snapshot
+
+Captured on 2026-08-31 with Go 1.23.12 on the same AMD EPYC 9V74 runner.
+The benchmark fits the 346-sample, seven-feature training partition from the
+600-bar synthetic fixture. It excludes database writes, tuning, calibration,
+and evaluation, so these are model-fit microbenchmarks, not job throughput.
+
+```sh
+go test ./market -run '^$' -bench BenchmarkPredictionFit \
+  -benchmem -count=3 -benchtime=5x
+```
+
+| Fit | Median time | Bytes/op | Allocations/op |
+| --- | ---: | ---: | ---: |
+| Standardized ridge (alpha 0.1) | 64.38 microseconds | 816 | 11 |
+| 64 gradient-boosted stumps | 737.41 microseconds | 225,816 | 94 |
+
+Three short samples are a development snapshot, not a statistically robust
+performance comparison. Use longer runs and profiles before making an
+optimization or production-latency claim.

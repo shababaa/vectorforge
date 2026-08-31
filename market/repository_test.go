@@ -62,7 +62,7 @@ func TestSchemaIsIdempotentAndIntrospectable(t *testing.T) {
 	}
 }
 
-func TestPhaseOneDatabaseMigratesToPhaseTwo(t *testing.T) {
+func TestPhaseOneDatabaseMigratesToLatest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "upgrade.db")
 	db, err := byodb.OpenDB(path)
 	if err != nil {
@@ -88,7 +88,7 @@ func TestPhaseOneDatabaseMigratesToPhaseTwo(t *testing.T) {
 		t.Fatal(err)
 	}
 	version, err := repository.CurrentSchemaVersion()
-	if err != nil || version != 2 {
+	if err != nil || version != SchemaVersion {
 		t.Fatalf("version=(%d,%v)", version, err)
 	}
 	if _, ok := db.Table(tableActions); !ok {

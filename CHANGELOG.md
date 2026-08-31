@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.4.0 — Reproducible prediction service
+
+- Added chronological train/tune/calibration/test partitioning and horizon-aware
+  purging of labels that cross partition boundaries.
+- Added deterministic persistence, moving-average, standardized ridge, and
+  gradient-boosted regression-stump models implemented with the Go standard library.
+- Added tuning-only hyperparameter selection, frozen holdout evaluation, and
+  rolling/expanding walk-forward refits with past-label-only training.
+- Added MAE, RMSE, MAPE, direction accuracy, empirical interval coverage/width/gap,
+  origin-time regime slices, and persistence-relative comparisons.
+- Added migration v3 and checksummed/chunked fitted-model and model-card storage.
+- Added saved-model NYSE daily forecasting, shared train/inference feature inputs,
+  immutable forecast writes, and exact replay after database reopen.
+- Added `experiment`, `experiment-demo`, `model-card`, and `predict` CLI commands,
+  synthetic fixtures, methodology/runbook, and synthetic/live-AAPL model cards.
+- Added future-label perturbation, deterministic-repeat, multi-bar/rolling-window,
+  artifact-corruption, migration, cancellation, and numerical-learning tests.
+
 ## v0.3.0 — Resumable real-market pipeline
 
 - Added a provider-neutral market-data contract and a live Twelve Data REST

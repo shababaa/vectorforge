@@ -74,6 +74,7 @@ deterministic integers.
 | `market_data_quality_runs` | `report_id` | Coverage, missing/unexpected sessions, anomalies, and dataset hash |
 | `market_ingestion_runs` | `run_id` | Job status, row counts, retries, credits, and bounded failure text |
 | `market_feature_watermarks` | `symbol, interval, feature_set` | Durable incremental-computation progress |
+| `market_model_artifacts` | `run_id, kind, chunk` | Checksummed fitted models and complete model cards (schema v3) |
 
 Secondary indexes support cross-sectional timestamp scans, model/status
 queries, forecast evaluation by target timestamp, and analysis lookup by
@@ -114,6 +115,46 @@ snapshot. News retrieval, source citations, and prompt-injection isolation are
 scheduled for a later phase. Until then, the prompt explicitly forbids invented
 news and limits claims to supplied evidence.
 
+## Prediction experiments (Phase 3)
+
+The prediction service takes one indexed candle snapshot (at most 20,000 bars),
+creates seven fixed-order origin-time features from 21-bar windows, and labels
+each origin with the log return to the next configured observed bar. It rejects
+mixed sources, mixed symbols/intervals, invalid prices, and non-increasing times.
+
+```mermaid
+flowchart TD
+    T[Training history] --> C[Candidate fits]
+    V[Tuning period] --> S[Select specs by MAE]
+    C --> S
+    S --> F[Frozen refit on train and tuning]
+    K[Separate calibration period] --> I[Residual intervals]
+    F --> I
+    I --> H[Frozen held-out evaluation]
+    S --> W[Past-label-only walk-forward refits]
+    H --> M[Persisted model card]
+    W --> M
+```
+
+The default 60/20/20 chronological split divides the middle 20% into tuning and
+calibration halves. Samples whose labels meet or cross the following origin
+boundary are purged. Ridge standardization is fit only on the current training
+slice. Hyperparameters are never chosen using calibration or test results.
+
+Each model has a frozen run and one run per walk-forward refit. Those runs store
+the true last training-label timestamp, configuration, metrics, and training
+hash. `market_model_artifacts` stores complete predictors and experiment cards
+in 1,800-byte chunks with a complete-payload SHA-256 checksum, fitting the engine's
+3,000-byte value limit. Each child run, artifact, and forecast batch commits
+atomically. The parent card and completed status commit together after all
+children succeed; cancelled/failed experiments preserve completed child runs
+for inspection and record a failed parent status.
+
+`PredictNextDaily` loads a stored predictor, checks calibration time against the
+chosen completed origin, uses the same feature mapping as training, and chooses
+a future NYSE session using the configured observed-bar horizon. It never refits
+or consults future prices. Repeated insertion cannot overwrite original output.
+
 ## Known limits
 
 - One process may open a database file at a time.
@@ -128,5 +169,11 @@ news and limits claims to supplied evidence.
   reconstruction; dividend total-return adjustment is not claimed.
 - A hosted LLM adapter is not committed yet.
 - Technical features are a starting set, not evidence of profitable alpha.
-- The baseline intentionally predicts the previous adjusted close. Later models
-  must beat it on held-out periods and multiple assets before they are promoted.
+- Model selection uses tuning data, and the final report can honestly show a
+  selected model losing to persistence. Single-asset error reductions do not
+  establish statistical significance or profitability.
+- Empirical residual intervals do not guarantee coverage for dependent,
+  nonstationary time series. No trading costs, slippage, or execution is modeled.
+- Vendor-adjusted/revised history is not vintage point-in-time market data.
+- Saved-model live forecasting currently supports daily bars and an explicitly
+  supplied exchange calendar; the CLI uses NYSE. Callers must choose completed bars.
