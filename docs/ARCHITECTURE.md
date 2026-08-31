@@ -74,7 +74,8 @@ deterministic integers.
 | `market_data_quality_runs` | `report_id` | Coverage, missing/unexpected sessions, anomalies, and dataset hash |
 | `market_ingestion_runs` | `run_id` | Job status, row counts, retries, credits, and bounded failure text |
 | `market_feature_watermarks` | `symbol, interval, feature_set` | Durable incremental-computation progress |
-| `market_model_artifacts` | `run_id, kind, chunk` | Checksummed fitted models and complete model cards (schema v3) |
+| `market_model_artifacts` | `run_id, kind, chunk` | Checksummed predictors, cards, analyst inputs/reports and evaluations |
+| `market_filing_sources` | `source_id` | Immutable SEC metadata, canonical URL, acceptance/first-observation times and digest (v4) |
 
 Secondary indexes support cross-sectional timestamp scans, model/status
 queries, forecast evaluation by target timestamp, and analysis lookup by
@@ -105,15 +106,22 @@ symbol and time.
 
 ## LLM boundary
 
-`LLMClient` is a dependency-injected interface. The repository contains no API
-keys and the market logic does not depend on a particular vendor. A provider
-adapter must return a typed `LLMResponse`; the service validates sentiment and
-confidence ranges before persistence.
+`LLMClient` is a dependency-injected interface. The native Ollama adapter sends
+separate system/data messages with a JSON schema and no tool capabilities to a
+local loopback server. SEC submissions retrieval is a separate explicit CLI job,
+not a tool callable by the model. It stores metadata only, not filing contents.
 
-The current prompt receives structured recent candles and a computed feature
-snapshot. News retrieval, source citations, and prompt-injection isolation are
-scheduled for a later phase. Until then, the prompt explicitly forbids invented
-news and limits claims to supplied evidence.
+The analyst reads candles, forecast lineage and filing sources from one database
+snapshot and releases it before the model call. A dedicated forecast DTO excludes
+all realized outcomes. The model selects evidence IDs and a constrained outlook;
+Go validates completeness/consistency and renders numeric and filing claims.
+The service rejects arbitrary prose rather than pretending citations validate it.
+
+Schema-v4 source records preserve both acceptance and first-retrieved time. The
+analysis, feature, exact input and full report commit atomically in the existing
+chunked artifact store. Invalid responses receive at most three total attempts,
+then an audited no-claims abstention. Legacy sentiment/confidence fields stay zero.
+See [ANALYST.md](ANALYST.md) for temporal rules, bounds, evaluation and API changes.
 
 ## Prediction experiments (Phase 3)
 
@@ -167,7 +175,10 @@ or consults future prices. Repeated insertion cannot overwrite original output.
   budget. It is intentionally conservative, not a high-throughput downloader.
 - Corporate-action adjustment covers splits for intraday adjusted-close
   reconstruction; dividend total-return adjustment is not claimed.
-- A hosted LLM adapter is not committed yet.
+- The LLM adapter is local Ollama only. Real-model quality is not established by
+  deterministic fixtures; live acceptance is explicitly pending.
+- Analyst output is controlled-language, daily-bar research commentary. SEC
+  metadata is not a substitute for reading filings or analyzing trusted news.
 - Technical features are a starting set, not evidence of profitable alpha.
 - Model selection uses tuning data, and the final report can honestly show a
   selected model losing to persistence. Single-asset error reductions do not

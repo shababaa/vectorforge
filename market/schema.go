@@ -22,6 +22,7 @@ const (
 	tableIngestRuns  = "market_ingestion_runs"
 	tableFeatureWM   = "market_feature_watermarks"
 	tableArtifacts   = "market_model_artifacts"
+	tableSources     = "market_filing_sources"
 )
 
 type schemaMigration struct {
@@ -58,6 +59,9 @@ func migrations() []schemaMigration {
 		{version: 2, name: "provider sync, corporate actions, quality, and incremental features", tables: phaseTwoTableDefinitions()},
 		{version: 3, name: "replayable prediction artifacts and model cards", tables: []*byodb.TableDef{
 			{Name: tableArtifacts, Cols: []string{"run_id", "kind", "chunk", "payload", "digest", "chunks"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64}, PKeys: 3, Indexes: [][]string{{"run_id", "kind", "chunk"}}},
+		}},
+		{version: 4, name: "grounded analyst filing evidence", tables: []*byodb.TableDef{
+			{Name: tableSources, Cols: []string{"source_id", "symbol", "cik", "accession", "form", "primary_document", "url", "published_at", "retrieved_at", "digest"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64, byodb.TYPE_INT64, byodb.TYPE_BYTES}, PKeys: 1, Indexes: [][]string{{"source_id"}, {"symbol", "published_at"}}},
 		}},
 	}
 }

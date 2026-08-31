@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 — Grounded local analyst
+
+- Added a native local Ollama adapter with separate system/data roles, JSON
+  schema output, request limits, timeout/cancellation, and no remote redirects.
+- Replaced free-form `LLMResponse` fields with an evidence-ID/outlook/abstention
+  contract. **Adapter API change:** legacy custom clients must adopt that contract;
+  existing stored analyses remain intact.
+- Added one-snapshot evidence retrieval, mandatory directional counter-evidence,
+  forecast outcome allowlisting, and conservative daily-bar/time-availability rules.
+- Added SEC recent-submissions metadata ingestion, validated ticker/CIK mapping,
+  canonical filing URLs, immutable first-observation times, hashes, and schema v4.
+- Added three-attempt validation/transport budget, audited failure abstentions,
+  atomic checksummed analysis artifacts, replay, and Markdown-safe metadata.
+- Added analyst/demo/report, filing retrieval, and labelled evaluation CLI commands.
+- Added deterministic/adversarial tests, HTTP contract tests, opt-in live tests,
+  migration/reopen tests, a JSON decoder fuzz target, and a student-focused runbook.
+- Documented that fixture evaluation is not LLM quality; live Ollama/SEC acceptance
+  remains pending in the supplied environment.
+
 ## v0.4.0 — Reproducible prediction service
 
 - Added chronological train/tune/calibration/test partitioning and horizon-aware

@@ -69,17 +69,26 @@ The Phase 2 multi-asset live acceptance remains open. Phase 3 does not promote a
 model into production or claim profitable trading. See [methodology and
 operations](PREDICTION.md) for bounds, interval caveats, and exact commands.
 
-## Phase 4 — grounded LLM analyst
+## Phase 4 — grounded LLM analyst (engineering complete; live-model acceptance pending)
 
-- Add a hosted or local LLM adapter behind `LLMClient`
-- Retrieve trusted news/filings and store source metadata
-- Structured output validation and retry policy
-- Prompt-injection defenses and strict context separation
-- Link each thesis to feature, forecast, and source IDs
-- Evaluation set for factuality, citation quality, consistency, and abstention
+- [x] Native local Ollama structured-output adapter behind `LLMClient`
+- [x] SEC recent-filing metadata retrieval, canonical source IDs, hashes, and two-clock availability
+- [x] Strict JSON/ID validation, bounded retry/repair, cancellation, and audited abstention
+- [x] System/data separation, no LLM tools, and controlled-language output capability
+- [x] One-snapshot evidence retrieval; feature/forecast/source IDs and exact audit payloads
+- [x] Ten labelled contract cases for citations, consistency, abstention, and injection attempts
+- [x] Exact-rendering factual-fidelity tests, schema-v4 migration, CLI workflow and replay tests
 
 Exit criteria: the analyst refuses unsupported claims and every visible claim
 can be traced to stored evidence.
+
+Implementation scope: Go computes and renders claims; the LLM selects evidence,
+not unrestricted prose. Sources currently cover SEC **metadata**, not filing
+contents or news sentiment. The deterministic demo/evaluation and adversarial
+validator tests pass. A real local-model evaluation and live SEC ingestion with
+the user's identifying User-Agent remain to be recorded; no fixture score is
+presented as LLM accuracy. See [analyst runbook](ANALYST.md) and
+[validation evidence](PHASE4_VALIDATION.md).
 
 ## Phase 5 — service and dashboard
 

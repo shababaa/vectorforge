@@ -221,7 +221,7 @@ type fakeLLM struct{ input []byte }
 
 func (f *fakeLLM) Complete(_ context.Context, request LLMRequest) (LLMResponse, error) {
 	f.input = append([]byte(nil), request.InputJSON...)
-	return LLMResponse{Thesis: "Momentum is positive, with elevated realized volatility.", SentimentPPM: 250_000, ConfidencePPM: 700_000, Evidence: []string{"five-day return is positive"}}, nil
+	return (FixtureAnalyst{}).Complete(context.Background(), request)
 }
 
 func TestAnalysisServicePersistsAuditablePointInTimeOutput(t *testing.T) {
@@ -235,7 +235,7 @@ func TestAnalysisServicePersistsAuditablePointInTimeOutput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	analysis, err := service.Analyze(context.Background(), "AAPL", "1d", candles[20].Timestamp, "")
+	analysis, err := service.Analyze(context.Background(), "AAPL", "1d", candles[20].Timestamp+86400, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestAnalysisServicePersistsAuditablePointInTimeOutput(t *testing.T) {
 	if ok, err := db.Get(tableAnalyses, stored); err != nil || !ok || stored.Get("input_digest").String() != analysis.InputDigest {
 		t.Fatalf("stored analysis=(%v,%v,%+v)", ok, err, stored)
 	}
-	var input analysisContext
+	var input AnalystContext
 	if err := json.Unmarshal(client.input, &input); err != nil {
 		t.Fatal(err)
 	}

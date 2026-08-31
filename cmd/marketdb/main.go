@@ -16,12 +16,14 @@ import (
 
 	"byodb"
 	"byodb/market"
+	"byodb/market/llm/ollama"
 	"byodb/market/provider/twelvedata"
+	"byodb/market/source/sec"
 )
 
 func main() {
 	dbPath := flag.String("db", "market.db", "database file")
-	command := flag.String("command", "init", "init, sync, import, features, features-incremental, quality, backtest, demo, experiment, experiment-demo, model-card, or predict")
+	command := flag.String("command", "init", "init, sync, import, features, features-incremental, quality, backtest, demo, experiment, experiment-demo, model-card, predict, filings, analyze, analysis-demo, analysis-report, analyst-eval, or analyst-eval-report")
 	symbol := flag.String("symbol", "AAPL", "market symbol")
 	symbols := flag.String("symbols", "", "comma-separated symbols for provider sync")
 	interval := flag.String("interval", "1d", "candle interval")
@@ -43,6 +45,12 @@ func main() {
 	coverage := flag.Float64("coverage", .9, "nominal empirical prediction-interval coverage")
 	runID := flag.String("run-id", "", "experiment ID for model-card; fitted model run ID for predict")
 	outputFormat := flag.String("format", "json", "experiment/model-card output: json or markdown")
+	cik := flag.String("cik", "", "ten-digit SEC company identifier for filings")
+	llmProvider := flag.String("llm-provider", "ollama", "ollama or fixture (fixture is not an LLM)")
+	llmModel := flag.String("model", os.Getenv("OLLAMA_MODEL"), "explicit installed local model tag for Ollama")
+	ollamaURL := flag.String("ollama-url", "http://127.0.0.1:11434", "numeric loopback Ollama origin")
+	analysisID := flag.String("analysis-id", "", "stored analysis ID for analysis-report")
+	timeout := flag.Duration("timeout", 2*time.Minute, "total analyst/source job timeout")
 	flag.Parse()
 	if *outputFormat != "json" && *outputFormat != "markdown" {
 		log.Fatal("-format must be json or markdown")
@@ -149,9 +157,102 @@ func main() {
 		defer stop()
 		forecast, err := repository.PredictNextDaily(ctx, *runID, *asOf, market.NewNYSECalendar())
 		mustPrint(forecast, err)
+	case "filings", "analyze", "analysis-demo", "analysis-report", "analyst-eval", "analyst-eval-report":
+		if *timeout <= 0 || *timeout > 10*time.Minute {
+			log.Fatal("-timeout must be positive and at most 10m")
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		ctx, cancel := context.WithTimeout(ctx, *timeout)
+		defer cancel()
+		if *command == "filings" {
+			client, err := sec.New(sec.Config{UserAgent: os.Getenv("SEC_USER_AGENT")})
+			if err != nil {
+				log.Fatal(err)
+			}
+			rows, err := client.RecentFilings(ctx, *symbol, *cik)
+			if err != nil {
+				log.Fatal(err)
+			}
+			stored, err := repository.StoreFilingSources(rows)
+			mustPrint(stored, err)
+			break
+		}
+		if *command == "analysis-report" {
+			report, err := repository.LoadAnalysisReport(*analysisID)
+			printAnalysis(report, *outputFormat, err)
+			break
+		}
+		if *command == "analyst-eval-report" {
+			report, err := repository.LoadAnalystEvaluation(*runID)
+			mustPrint(report, err)
+			break
+		}
+		providerName, modelName := *llmProvider, *llmModel
+		selectedSymbol, selectedInterval, selectedRun, selectedAsOf := *symbol, *interval, *runID, *asOf
+		if *command == "analysis-demo" {
+			providerName, modelName = "fixture", "deterministic-not-an-llm"
+			if _, err := repository.IngestCandles(market.AnalystDemoCandles(time.Now().UTC())); err != nil {
+				log.Fatal(err)
+			}
+			card, err := repository.RunPredictionExperiment(ctx, "SYNTH", "1d", 0, 0, market.DefaultPredictionConfig())
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, model := range card.Models {
+				if model.Spec == card.SelectedByTuning {
+					selectedRun = model.HoldoutRunID
+				}
+			}
+			if _, err := repository.PredictNextDaily(ctx, selectedRun, 0, market.NewNYSECalendar()); err != nil {
+				log.Fatal(err)
+			}
+			selectedSymbol, selectedInterval, selectedAsOf = "SYNTH", "1d", 0
+		}
+		var client market.LLMClient
+		switch providerName {
+		case "fixture":
+			client = market.FixtureAnalyst{}
+			modelName = "deterministic-not-an-llm"
+		case "ollama":
+			client, err = ollama.New(ollama.Config{BaseURL: *ollamaURL, Model: modelName})
+			if err != nil {
+				log.Fatal(err)
+			}
+		default:
+			log.Fatal("-llm-provider must be ollama or fixture")
+		}
+		if *command == "analyst-eval" {
+			report, err := repository.EvaluateAnalyst(ctx, client, providerName, modelName)
+			mustPrint(report, err)
+			if report.Errors > 0 {
+				log.Fatal("analyst evaluation had completion errors; report was saved")
+			}
+			break
+		}
+		service, err := market.NewAnalysisService(repository, client, providerName, modelName, market.AnalystVersion)
+		if err != nil {
+			log.Fatal(err)
+		}
+		report, err := service.AnalyzeReport(ctx, selectedSymbol, selectedInterval, selectedAsOf, selectedRun)
+		printAnalysis(report, *outputFormat, err)
+		if report.Decision.AbstainReason == "provider_error" || report.Decision.AbstainReason == "validation_failed" {
+			log.Fatal("analyst failed closed; inspect the saved analysis report")
+		}
 	default:
 		log.Fatalf("unknown command %q", *command)
 	}
+}
+
+func printAnalysis(report market.AnalysisReport, format string, err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	if format == "markdown" {
+		fmt.Print(market.AnalysisMarkdown(report))
+		return
+	}
+	mustPrint(report, nil)
 }
 
 func printModelCard(card market.PredictionModelCard, format string, err error) {

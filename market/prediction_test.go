@@ -339,7 +339,7 @@ func TestPhaseTwoDatabaseMigratesPredictionArtifacts(t *testing.T) {
 		t.Fatal(err)
 	}
 	v, _ := r.CurrentSchemaVersion()
-	if v != 3 {
+	if v != SchemaVersion {
 		t.Fatalf("version=%d", v)
 	}
 	rows, err := r.Candles(CandleQuery{Symbol: "AAPL", Interval: "1d", Limit: 10})

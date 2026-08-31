@@ -82,6 +82,20 @@ probability of profit. See the [prediction runbook](docs/PREDICTION.md),
 [synthetic example card](docs/EXAMPLE_MODEL_CARD.md), and
 [five-year AAPL validation card](docs/AAPL_MODEL_CARD.md).
 
+Run the Phase 4 grounded analyst through the entire pipeline, without a paid API:
+
+```sh
+go run ./cmd/marketdb -db analyst-demo.db -command analysis-demo -format markdown
+go run ./cmd/marketdb -db analyst-demo.db -command analyst-eval -llm-provider fixture
+```
+
+This offline demo is explicitly **not an LLM**. A real local Ollama adapter and
+SEC filing-metadata adapter are included; setup, live checks, and limitations
+are in the [analyst runbook](docs/ANALYST.md). The analyst ranks stored evidence,
+Go validates citations and renders claims, and unsupported output fails closed.
+See the [Phase 4 validation record](docs/PHASE4_VALIDATION.md) for measured results
+and the remaining live-model acceptance step.
+
 Import real provider-neutral CSV data:
 
 ```sh
@@ -122,11 +136,14 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | RMSE, interval coverage, width, calibration gap, regime slices | Evaluation beyond a single headline accuracy score |
 | MAE, MAPE, direction accuracy, dataset hash | Measurable model performance and lineage |
 | Typed `LLMClient` + input digest | Provider independence, testability, and LLM auditability |
+| Evidence-ID output contract + fail-closed validation | Grounding without treating citations as proof of arbitrary prose |
+| SEC publication/retrieval clocks + sanitized forecast DTOs | Temporal provenance and prevention of outcome leakage |
+| Local LLM HTTP adapter + adversarial contract suite | Structured outputs, safe retries, and honest evaluation |
 | Runtime counters + database page stats | Observability and benchmarkable systems work |
 
-The quantitative model owns numeric prediction. The LLM consumes versioned,
-point-in-time evidence and produces a cited thesis. This avoids asking an LLM
-to hallucinate prices or silently use future information.
+The quantitative model owns numeric prediction. The LLM selects and orders
+versioned evidence; Go checks consistency and renders a cited, controlled-language
+thesis. There is no free-form financial-claim generation in this baseline.
 
 See [architecture](docs/ARCHITECTURE.md), [delivery roadmap](docs/ROADMAP.md),
 [Twelve Data operations](docs/PROVIDER_TWELVEDATA.md),
@@ -267,4 +284,6 @@ learning, not production workloads.
 | `stats.go` | page, file, transaction, and catalog metrics |
 | `market/` | market schema, provider contract, resumable sync, quality, features, prediction experiments, model cards, LLM boundary |
 | `market/provider/twelvedata` | live REST adapter, response parsing, rate limiting, retries, and contract tests |
-| `cmd/marketdb` | provider sync, CSV import, feature, quality, backtest, and demo CLI |
+| `market/llm/ollama` | local structured-output LLM adapter and HTTP contract tests |
+| `market/source/sec` | SEC filing metadata, request policy, and source validation |
+| `cmd/marketdb` | data, prediction, grounded analyst, evaluation, and replay CLI |

@@ -16,7 +16,7 @@ const (
 	PriceScale int64 = 1_000_000
 	// RatioScale stores ratios such as returns, confidence, and RSI in ppm.
 	RatioScale        int64 = 1_000_000
-	SchemaVersion           = int64(3)
+	SchemaVersion           = int64(4)
 	DefaultFeatureSet       = "technical-v1"
 )
 
