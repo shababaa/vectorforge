@@ -479,12 +479,3 @@ func writeFullAt(file *os.File, data []byte, offset int64) error {
 	}
 	return nil
 }
-
-func syncParent(path string) error {
-	dir, err := os.Open(filepath.Dir(path))
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
-	return dir.Sync()
-}
