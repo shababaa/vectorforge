@@ -16,6 +16,10 @@ flowchart TD
     Q --> L
     E --> D
     L --> D
+    D --> A[Bounded REST service]
+    A --> U[Embedded dashboard]
+    A --> J[Durable background jobs]
+    J --> I
 ```
 
 The database is an embedded single-process Go engine. The market package is a
@@ -76,10 +80,37 @@ deterministic integers.
 | `market_feature_watermarks` | `symbol, interval, feature_set` | Durable incremental-computation progress |
 | `market_model_artifacts` | `run_id, kind, chunk` | Checksummed predictors, cards, analyst inputs/reports and evaluations |
 | `market_filing_sources` | `source_id` | Immutable SEC metadata, canonical URL, acceptance/first-observation times and digest (v4) |
+| `market_service_jobs` | `job_id` | Durable queued/running/terminal work, request digest, and bounded result (v5) |
+| `market_app_metadata` | `key` | Small versioned application manifests, including idempotent demo identity (v5) |
 
 Secondary indexes support cross-sectional timestamp scans, model/status
 queries, forecast evaluation by target timestamp, and analysis lookup by
 symbol and time.
+
+## HTTP and job boundary (Phase 5)
+
+The server remains a single owner of the database file. Read routes execute
+bounded indexed repository calls under request deadlines. Mutations commit a
+small job record and return; a one-to-four-worker pool atomically claims work
+from the same database. This is not a distributed queue. It demonstrates the
+state machine and crash boundary before introducing external infrastructure.
+
+An idempotency key is hashed and mapped to a deterministic job ID. Repeating the
+same canonical request returns its original job, while a changed request
+returns a conflict. Queued jobs remain queued across restart. Running jobs are
+marked failed with `server_restarted`, because replaying a task after an unknown
+partial side effect would make an exactly-once claim the engine cannot support.
+
+HTTP concurrency, bodies, headers, query rows, worker counts, JSON control rows,
+and shutdown are independently bounded. The API logs stable route templates,
+not raw URLs, and gives clients a request ID without logging bearer tokens or
+payloads. Prometheus exposition uses only bounded labels, preventing symbols or
+arbitrary paths from creating unbounded metric cardinality.
+
+The dashboard is embedded into the Go binary and shares the API origin. It uses
+standards-based JavaScript and Canvas so the documented demo needs no npm/CDN
+step. Go remains responsible for numeric values and audited claims; the browser
+only formats stored records and draws their relationships.
 
 ## Correctness invariants
 
@@ -166,6 +197,8 @@ or consults future prices. Repeated insertion cannot overwrite original output.
 ## Known limits
 
 - One process may open a database file at a time.
+- The Phase 5 queue is local to that one process; it is durable but not distributed.
+- Mutation auth is one configured bearer token, not a user/role system. TLS is expected at a trusted proxy and is not implemented by this student server.
 - SQL is the book's simplified dialect; the market repository uses typed APIs.
 - Twelve Data is the only live market-data adapter; adding another provider
   requires implementing `MarketDataProvider`.

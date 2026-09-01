@@ -16,7 +16,7 @@ const (
 	PriceScale int64 = 1_000_000
 	// RatioScale stores ratios such as returns, confidence, and RSI in ppm.
 	RatioScale        int64 = 1_000_000
-	SchemaVersion           = int64(4)
+	SchemaVersion           = int64(5)
 	DefaultFeatureSet       = "technical-v1"
 )
 
@@ -116,6 +116,31 @@ type Analysis struct {
 	EvidenceJSON  string
 	ForecastRunID string
 	CreatedAt     int64
+}
+
+const (
+	JobQueued    = "queued"
+	JobRunning   = "running"
+	JobSucceeded = "succeeded"
+	JobFailed    = "failed"
+	JobCancelled = "cancelled"
+)
+
+// ServiceJob is a durable control-plane record. Payloads and results are kept
+// deliberately small; market data remains in its normalized domain tables.
+type ServiceJob struct {
+	JobID           string `json:"job_id"`
+	Kind            string `json:"kind"`
+	Status          string `json:"status"`
+	RequestJSON     string `json:"request_json"`
+	ResultJSON      string `json:"result_json,omitempty"`
+	ErrorCode       string `json:"error_code,omitempty"`
+	IdempotencyHash string `json:"idempotency_hash,omitempty"`
+	RequestDigest   string `json:"request_digest"`
+	CreatedAt       int64  `json:"created_at"`
+	StartedAt       int64  `json:"started_at,omitempty"`
+	FinishedAt      int64  `json:"finished_at,omitempty"`
+	CancelRequested bool   `json:"cancel_requested"`
 }
 
 type IngestionCheckpoint struct {

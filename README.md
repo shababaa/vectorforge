@@ -18,6 +18,24 @@ in this repository.
 > This is an educational engineering and research project, not financial
 > advice or a production trading system.
 
+## Phase 5 full-stack demo
+
+Start the complete offline service from an empty database:
+
+```sh
+go run ./cmd/marketserver -db service-demo.db -seed-demo
+```
+
+Open <http://127.0.0.1:8080>. One Go process now serves a responsive market
+dashboard and bounded REST API, runs restart-aware background jobs, exports
+Prometheus metrics and JSON logs, and owns the embedded database. The first
+start produces the synthetic dataset, model card, saved prediction, and
+grounded analyst record; later starts reuse those persisted artifacts.
+
+Docker users can run the same acceptance path with `docker compose up --build`.
+See the [service runbook](docs/SERVICE.md), [OpenAPI contract](docs/openapi.yaml),
+and [Phase 5 validation record](docs/PHASE5_VALIDATION.md).
+
 ## Market intelligence quick start
 
 Initialize the versioned market schema:
@@ -140,6 +158,10 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | SEC publication/retrieval clocks + sanitized forecast DTOs | Temporal provenance and prevention of outcome leakage |
 | Local LLM HTTP adapter + adversarial contract suite | Structured outputs, safe retries, and honest evaluation |
 | Runtime counters + database page stats | Observability and benchmarkable systems work |
+| Durable idempotent background jobs | Retry, cancellation, and crash-state design without a queue framework |
+| Bounded REST API + request IDs + safe errors | Service contracts, overload controls, and operational debugging |
+| Embedded responsive dashboard + custom Canvas chart | Full-stack delivery with a reproducible offline build |
+| Prometheus metrics, JSON logs, Docker, and CI | Deployment and production-shaped engineering practices |
 
 The quantitative model owns numeric prediction. The LLM selects and orders
 versioned evidence; Go checks consistency and renders a cited, controlled-language

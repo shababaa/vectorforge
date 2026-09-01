@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BYODB market intelligence observability dashboard">
+  <title>BYODB Market Lab</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">B+</span>
+        <div><strong>BYODB</strong><small>Market Lab</small></div>
+      </div>
+      <nav aria-label="Dashboard sections">
+        <a class="active" href="#overview">Overview</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#model">Model card</a>
+        <a href="#analysis">Analyst</a>
+      </nav>
+      <div class="system-card">
+        <div><span id="health-dot" class="status-dot"></span><span id="health-text">Connecting</span></div>
+        <small id="db-detail">Database status pending</small>
+      </div>
+      <p class="sidebar-note">Synthetic demonstration data. Educational research, not financial advice.</p>
+    </aside>
+
+    <main id="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">END-TO-END SYSTEM</p>
+          <h1>Market intelligence console</h1>
+          <p id="updated-at" class="muted">Loading the latest database snapshot…</p>
+        </div>
+        <div class="top-actions">
+          <span id="data-badge" class="badge">SYNTH · 1D</span>
+          <button id="refresh" type="button">Refresh data</button>
+        </div>
+      </header>
+
+      <div id="error-banner" class="error-banner" role="alert" hidden></div>
+
+      <section id="overview" class="kpi-grid" aria-label="Market summary">
+        <article class="kpi"><span>Latest close</span><strong id="latest-close">—</strong><small id="close-change">Waiting for data</small></article>
+        <article class="kpi"><span>One-bar return</span><strong id="return-one">—</strong><small>Point-in-time feature</small></article>
+        <article class="kpi"><span>20-bar volatility</span><strong id="volatility">—</strong><small>Per bar, not annualized</small></article>
+        <article class="kpi"><span>Forecast interval</span><strong id="coverage">—</strong><small>Nominal coverage, not profit odds</small></article>
+      </section>
+
+      <section class="grid-two">
+        <article class="panel price-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">PRICE HISTORY</p><h2>Adjusted close</h2></div>
+            <div class="legend"><span><i class="line actual"></i>Observed</span><span><i class="line predicted"></i>Forecast</span></div>
+          </div>
+          <div class="chart-wrap"><canvas id="price-chart" role="img" aria-label="Observed prices and next-session forecast"></canvas></div>
+          <div class="axis-caption"><span id="chart-start">—</span><span id="chart-end">—</span></div>
+        </article>
+
+        <article id="forecast" class="panel forecast-panel">
+          <div class="panel-heading"><div><p class="eyebrow">SAVED PREDICTION</p><h2>Next observed session</h2></div><span id="forecast-direction" class="signal neutral">Pending</span></div>
+          <dl class="metric-list">
+            <div><dt>Baseline</dt><dd id="forecast-baseline">—</dd></div>
+            <div><dt>Predicted close</dt><dd id="forecast-price">—</dd></div>
+            <div><dt>Lower bound</dt><dd id="forecast-low">—</dd></div>
+            <div><dt>Upper bound</dt><dd id="forecast-high">—</dd></div>
+            <div><dt>Target session</dt><dd id="forecast-target">—</dd></div>
+          </dl>
+          <p class="callout">The interval is calibrated from historical residuals. It is not a probability of profit or a trading recommendation.</p>
+        </article>
+      </section>
+
+      <section class="grid-two lower-grid">
+        <article id="model" class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">REPRODUCIBLE MODEL CARD</p><h2 id="model-name">Selection pending</h2></div><span id="baseline-result" class="signal neutral">—</span></div>
+          <div class="model-stats">
+            <div><span>Holdout MAE</span><strong id="holdout-mae">—</strong></div>
+            <div><span>Persistence-relative</span><strong id="mae-improvement">—</strong></div>
+            <div><span>Direction accuracy</span><strong id="direction-accuracy">—</strong></div>
+            <div><span>Test observations</span><strong id="observations">—</strong></div>
+          </div>
+          <p id="selection-note" class="muted body-copy">The tuning set selects the model before holdout metrics are inspected.</p>
+          <a id="model-link" class="text-link" href="#">Open full model-card JSON →</a>
+        </article>
+
+        <article id="analysis" class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">GROUNDED ANALYST</p><h2 id="analysis-status">Evidence summary</h2></div><span id="analysis-outlook" class="signal neutral">—</span></div>
+          <p id="analysis-thesis" class="thesis">Waiting for the audited analyst record.</p>
+          <h3>Traceable claims</h3>
+          <ul id="evidence-list" class="evidence-list"><li>Loading evidence lineage…</li></ul>
+          <a id="analysis-link" class="text-link" href="#">Open complete audit JSON →</a>
+        </article>
+      </section>
+
+      <footer>
+        <span id="storage-detail">Storage metrics pending</span>
+        <span>API <a href="/api/v1/capabilities">capabilities</a> · <a href="/metrics">Prometheus metrics</a></span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

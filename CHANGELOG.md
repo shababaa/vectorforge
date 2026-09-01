@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.0 — Single-process market service
+
+- Added schema v5 with durable service jobs, hashed idempotency keys, bounded
+  payload/results, atomic claiming, cooperative cancellation, and explicit
+  interrupted-job recovery.
+- Added built-in background workflows for demo seeding, provider ingestion,
+  feature recomputation, experiments, prediction, evaluation, and configured
+  grounded analysis.
+- Added a bounded REST API with request IDs, deadlines, concurrency admission,
+  stable error envelopes, mutation bearer auth, origin checks, security headers,
+  liveness/readiness, model cards, and complete analyst audit retrieval.
+- Added a responsive embedded dashboard with a custom Canvas market/forecast
+  chart, point-in-time features, interval caveats, model evidence, and claim
+  lineage; no network-loaded frontend dependencies are required.
+- Added Prometheus-compatible HTTP/job/storage metrics and structured JSON logs
+  that use route templates and exclude credentials and request bodies.
+- Added graceful shutdown, non-root hardened Docker/Compose files, Linux/Windows
+  CI, an OpenAPI contract, a bounded Go load generator, and an operations runbook.
+- Integrated the Windows directory-sync build-tag fix and cross-platform signal
+  selection while retaining file-sync durability.
+
 ## v0.5.0 — Grounded local analyst
 
 - Added a native local Ollama adapter with separate system/data roles, JSON

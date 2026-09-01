@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,7 +43,7 @@ func TestMarketDBPhaseThreeCLIWorkflow(t *testing.T) {
 		return output
 	}
 	init := run(true, "-command", "init")
-	if !strings.Contains(string(init), `"market_schema_version": 4`) {
+	if !strings.Contains(string(init), fmt.Sprintf(`"market_schema_version": %d`, market.SchemaVersion)) {
 		t.Fatalf("schema: %s", init)
 	}
 	data := run(true, "-command", "experiment-demo")

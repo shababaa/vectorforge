@@ -420,7 +420,7 @@ func TestPhaseThreeDatabaseMigratesAnalyst(t *testing.T) {
 		t.Fatal("candles lost", err)
 	}
 	version, err := r.CurrentSchemaVersion()
-	if err != nil || version != 4 {
+	if err != nil || version != SchemaVersion {
 		t.Fatal(version, err)
 	}
 }

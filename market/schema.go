@@ -23,6 +23,8 @@ const (
 	tableFeatureWM   = "market_feature_watermarks"
 	tableArtifacts   = "market_model_artifacts"
 	tableSources     = "market_filing_sources"
+	tableJobs        = "market_service_jobs"
+	tableAppMetadata = "market_app_metadata"
 )
 
 type schemaMigration struct {
@@ -62,6 +64,10 @@ func migrations() []schemaMigration {
 		}},
 		{version: 4, name: "grounded analyst filing evidence", tables: []*byodb.TableDef{
 			{Name: tableSources, Cols: []string{"source_id", "symbol", "cik", "accession", "form", "primary_document", "url", "published_at", "retrieved_at", "digest"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64, byodb.TYPE_INT64, byodb.TYPE_BYTES}, PKeys: 1, Indexes: [][]string{{"source_id"}, {"symbol", "published_at"}}},
+		}},
+		{version: 5, name: "service jobs and application metadata", tables: []*byodb.TableDef{
+			{Name: tableJobs, Cols: []string{"job_id", "kind", "status", "request_json", "result_json", "error_code", "idempotency_hash", "request_digest", "created_at", "started_at", "finished_at", "cancel_requested"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64, byodb.TYPE_INT64, byodb.TYPE_INT64, byodb.TYPE_INT64}, PKeys: 1, Indexes: [][]string{{"job_id"}, {"status", "created_at", "job_id"}, {"kind", "created_at", "job_id"}}},
+			{Name: tableAppMetadata, Cols: []string{"key", "value_json", "updated_at"}, Types: []uint32{byodb.TYPE_BYTES, byodb.TYPE_BYTES, byodb.TYPE_INT64}, PKeys: 1, Indexes: [][]string{{"key"}}},
 		}},
 	}
 }

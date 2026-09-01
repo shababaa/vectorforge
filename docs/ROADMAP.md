@@ -90,16 +90,25 @@ the user's identifying User-Agent remain to be recorded; no fixture score is
 presented as LLM accuracy. See [analyst runbook](ANALYST.md) and
 [validation evidence](PHASE4_VALIDATION.md).
 
-## Phase 5 — service and dashboard
+## Phase 5 — service and dashboard (complete for the single-process scope)
 
-- HTTP/gRPC API with timeouts, request IDs, and graceful shutdown
-- Background ingestion/evaluation workers
-- React dashboard for charts, features, forecasts, confidence, and model cards
-- Prometheus-compatible metrics and structured logs
-- Docker, CI, load tests, and reproducible demo deployment
+- [x] Versioned REST API with deadlines, request IDs, stable errors, overload bounds, and graceful shutdown
+- [x] Schema-v5 durable jobs with idempotency, cancellation, restart recovery, and bounded workers
+- [x] Background ingestion, feature, experiment, prediction, evaluation, and configured analyst workflows
+- [x] Responsive offline dashboard for charts, features, forecasts, uncertainty, model cards, and analyst lineage
+- [x] Prometheus-compatible metrics, route-safe structured logs, liveness, and readiness
+- [x] Non-root Docker/Compose deployment, Linux/Windows CI, load generator, OpenAPI, and runbook
 
 Exit criteria: one command starts a documented end-to-end system with health
 checks and a seeded demo.
+
+Evidence: `go run ./cmd/marketserver -db service-demo.db -seed-demo` builds the
+entire synthetic pipeline on first start and reuses it thereafter. The UI uses
+dependency-free JavaScript/Canvas instead of the originally proposed React
+toolchain so the Go binary remains an offline, reproducible single-command
+artifact. REST was selected over adding a duplicate gRPC surface in this
+student phase. See [service design](SERVICE.md) and
+[validation evidence](PHASE5_VALIDATION.md).
 
 ## Phase 6 — database systems depth
 

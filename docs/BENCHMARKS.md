@@ -60,3 +60,25 @@ go test ./market -run '^$' -bench BenchmarkPredictionFit \
 Three short samples are a development snapshot, not a statistically robust
 performance comparison. Use longer runs and profiles before making an
 optimization or production-latency claim.
+
+## Phase 5 HTTP load methodology
+
+Start a seeded server in one terminal, then run the bounded read-only client in
+another:
+
+```sh
+go run ./cmd/marketserver -db service-demo.db -seed-demo
+go run ./cmd/marketload -duration 10s -concurrency 16
+```
+
+The target is the overview query with 120 candles plus feature, forecast, model,
+analysis, and storage summaries. The client reuses HTTP connections and reports
+status counts, response bytes, requests/second, and nearest-rank p50/p95/p99.
+It exits non-zero for any transport, body-read, or non-2xx response. This tests
+the complete service/repository/serialization path, not browser rendering.
+
+Before publishing a result, record CPU, operating system, Go version, commit,
+database size, command, warm/cold-cache state, and raw JSON. Loopback throughput
+is not internet latency, and multiple workers do not make the embedded engine a
+distributed database. The current measured acceptance snapshot is in
+[PHASE5_VALIDATION.md](PHASE5_VALIDATION.md).
