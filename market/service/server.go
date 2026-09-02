@@ -24,7 +24,7 @@ import (
 	"byodb/market"
 )
 
-const DefaultVersion = "0.6.0"
+const DefaultVersion = "0.7.0"
 
 //go:embed ui
 var embeddedUI embed.FS
@@ -37,6 +37,7 @@ type Config struct {
 	RequestTimeout time.Duration
 	MaxInFlight    int
 	Version        string
+	ReadOnly       bool
 }
 
 type Server struct {
@@ -50,6 +51,7 @@ type Server struct {
 	metrics        *HTTPMetrics
 	files          http.Handler
 	requestSeq     atomic.Uint64
+	readOnly       bool
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -81,7 +83,7 @@ func NewServer(config Config) (*Server, error) {
 	return &Server{
 		repository: config.Repository, jobs: config.Jobs, logger: config.Logger, apiToken: config.APIToken,
 		requestTimeout: config.RequestTimeout, version: config.Version, semaphore: make(chan struct{}, config.MaxInFlight),
-		metrics: newHTTPMetrics(), files: http.FileServer(http.FS(ui)),
+		metrics: newHTTPMetrics(), files: http.FileServer(http.FS(ui)), readOnly: config.ReadOnly,
 	}, nil
 }
 
@@ -264,7 +266,11 @@ func (s *Server) capabilities(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
 		return
 	}
-	s.writeData(w, r, http.StatusOK, map[string]any{"version": s.version, "schema_version": market.SchemaVersion, "job_kinds": s.jobs.Capabilities(), "mutations_enabled": s.apiToken != ""})
+	kinds := s.jobs.Capabilities()
+	if s.readOnly {
+		kinds = []string{}
+	}
+	s.writeData(w, r, http.StatusOK, map[string]any{"version": s.version, "schema_version": market.SchemaVersion, "job_kinds": kinds, "mutations_enabled": s.apiToken != "" && !s.readOnly, "read_only": s.readOnly})
 }
 
 func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
