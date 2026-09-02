@@ -76,3 +76,20 @@ func TestBTreeLargeValuesForceThreeWaySplit(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkBTreeSequentialInsert(b *testing.B) {
+	keys := make([][]byte, 1000)
+	values := make([][]byte, 1000)
+	for i := range keys {
+		keys[i] = []byte(fmt.Sprintf("SYNTH:1d:%010d", i))
+		values[i] = []byte(fmt.Sprintf("market-row-%010d", i))
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for iteration := 0; iteration < b.N; iteration++ {
+		tree, _ := newMemoryTree()
+		for i := range keys {
+			tree.insert(keys[i], values[i])
+		}
+	}
+}

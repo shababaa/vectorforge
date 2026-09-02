@@ -36,6 +36,28 @@ Docker users can run the same acceptance path with `docker compose up --build`.
 See the [service runbook](docs/SERVICE.md), [OpenAPI contract](docs/openapi.yaml),
 and [Phase 5 validation record](docs/PHASE5_VALIDATION.md).
 
+## Phase 6 database-systems demo
+
+Create a durable snapshot, then serve that independent file without workers or
+mutations:
+
+```sh
+# Stop any process currently owning service-demo.db before using the CLI.
+go run ./cmd/byodb -db service-demo.db -backup service-replica.db
+go run ./cmd/marketserver -db service-replica.db -read-only -addr 127.0.0.1:8081
+```
+
+The engine now takes a non-blocking OS lock before reading metadata. A writer is
+exclusive; multiple read-only handles may share the same file when no writer
+owns it. A live embedded writer can call `db.Backup(...)` itself without stopping
+because the pager takes a consistent durable snapshot under its commit mutex.
+This is point-in-time replication, not live multi-writer replication.
+
+Phase 6 also adds prefix-compressed time-series leaves, atomic write batches,
+bounded range deletion, `DROP TABLE`, crash-boundary child-process tests, and
+native fuzzing. See the [validation evidence](docs/PHASE6_VALIDATION.md) and the
+explicit [durability contract](docs/DURABILITY.md).
+
 ## Market intelligence quick start
 
 Initialize the versioned market schema:
@@ -162,6 +184,10 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | Bounded REST API + request IDs + safe errors | Service contracts, overload controls, and operational debugging |
 | Embedded responsive dashboard + custom Canvas chart | Full-stack delivery with a reproducible offline build |
 | Prometheus metrics, JSON logs, Docker, and CI | Deployment and production-shaped engineering practices |
+| OS file locks + fsynced snapshot replicas | Cross-process safety with explicit replication semantics |
+| Prefix-compressed B+tree leaves | On-disk format evolution and time-series locality |
+| Crash failpoints + native fuzzing | Recovery reasoning beyond happy-path unit tests |
+| Bounded range delete + atomic table drop | Storage maintenance with index/catalog consistency |
 
 The quantitative model owns numeric prediction. The LLM selects and orders
 versioned evidence; Go checks consistency and renders a cited, controlled-language
@@ -185,7 +211,8 @@ Smith's *Build Your Own Database From Scratch in Go* (2nd edition):
 4. atomic transactions and snapshot isolation;
 5. optimistic conflict detection for concurrent writers;
 6. relational tables, range scans, and secondary indexes; and
-7. a recursively parsed SQL-like query language.
+7. a recursively parsed SQL-like query language; and
+8. process locks, snapshot backups, prefix-compressed leaves, and maintenance operations.
 
 The implementation is educational but complete enough to embed in a Go
 program or use through its interactive shell. It uses only the Go standard
@@ -236,6 +263,7 @@ LIMIT 20;
 
 UPDATE users SET age = age + 1 INDEX BY id = 1;
 DELETE FROM users INDEX BY id = 3;
+DROP TABLE users;
 ```
 
 `INDEX BY` is intentionally explicit, as in the textbook. It selects a primary
@@ -274,9 +302,25 @@ if err := db.Commit(&tx); err != nil {
 The lower-level `KV`, `KVTX`, `Record`, `TableDef`, and `Scanner` APIs are also
 available for applications that do not want to use the query language.
 
+Create and open a point-in-time read-only replica:
+
+```go
+if err := db.Backup("app-replica.db"); err != nil { /* handle */ }
+
+replica, err := byodb.OpenDBReadOnly("app-replica.db")
+if err != nil { /* handle */ }
+defer replica.Close()
+```
+
+`ApplyBatch` commits up to 10,000 mixed-table mutations with one durability
+boundary. `DeleteRange` removes a bounded page of matching relational rows and
+returns `More`; every deleted row's secondary-index entries are maintained in
+the same transaction.
+
 ## Storage and recovery design
 
-- B+tree nodes use the byte layout from chapters 4-5 and split by encoded size.
+- B+tree nodes use the byte layout from chapters 4-5 and split by encoded size;
+  format v3 leaves may front-code a common key prefix once per page.
 - Data pages are copy-on-write; a transaction never overwrites its live tree.
 - Commits write all new pages and call `fsync` before publishing a root.
 - Two checksummed meta pages alternate by version. Opening the file chooses the
@@ -286,10 +330,12 @@ available for applications that do not want to use the query language.
 - Transactions keep updates in an in-memory B+tree. At commit, updates are
   checked against newer write history and then applied to the current root.
 
-This is a single-process embedded database. Do not open the same file from two
-processes simultaneously; inter-process locking and a network protocol are
-outside the book's scope. Back up important data: the project is intended for
-learning, not production workloads.
+This remains a single-writer embedded database. OS locks now reject unsafe
+second writers and writer/reader overlap on the same file; read-only processes
+serve independent snapshot files. It does not provide live replication,
+network consensus, or multi-host filesystem safety. Back up important data:
+the project is intended for learning, not production workloads. The complete
+boundary is documented in [DURABILITY.md](docs/DURABILITY.md).
 
 ## Project map
 
@@ -304,6 +350,7 @@ learning, not production workloads.
 | `query.go` | expression evaluator and statement interpreter |
 | `cmd/byodb` | interactive command-line shell |
 | `stats.go` | page, file, transaction, and catalog metrics |
+| `filelock_*.go` | cross-platform shared/exclusive database-file locks |
 | `market/` | market schema, provider contract, resumable sync, quality, features, prediction experiments, model cards, LLM boundary |
 | `market/provider/twelvedata` | live REST adapter, response parsing, rate limiting, retries, and contract tests |
 | `market/llm/ollama` | local structured-output LLM adapter and HTTP contract tests |

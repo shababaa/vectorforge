@@ -26,6 +26,26 @@ The current copy-on-write engine favors educational clarity and durability over
 bulk-ingestion throughput; allocation profiles should guide Phase 6 rather than
 being hidden.
 
+## Phase 6 storage-engine result
+
+Phase 6 added a stable 1,000-key engine benchmark and retained the market
+repository benchmarks. On the same Go 1.23.12 / AMD EPYC 9V74 runner:
+
+| Operation | Before median | After median | Result |
+| --- | ---: | ---: | ---: |
+| 1,000 ordered time-series B+tree inserts | 74.42 ms, 179.02 MB, 30,844 allocs | 17.36 ms, 26.86 MB, 10,288 allocs | 76.7% lower time, 85.0% lower bytes |
+| Atomic ingestion of 100 candles | 26.31 ms, 46.82 MB, 15,806 allocs | 8.03 ms, 14.31 MB, 12,105 allocs | 69.5% lower time |
+| Indexed latest-252 retrieval | 2.48 ms, 1.87 MB, 5,290 allocs | 0.338 ms, 0.546 MB, 6,340 allocs | 86.4% lower time; allocation count increased |
+
+The split search now measures candidate sizes without constructing candidate
+nodes and selects a balanced compressed boundary. Prefix decoding still creates
+more small objects in the range iterator, so the retrieval allocation-count
+regression is an explicit follow-up rather than a hidden benchmark detail.
+
+Run both benchmark groups with `make benchmark`. Full raw samples, compression
+statistics, limitations, and the exact comparison are recorded in
+[PHASE6_VALIDATION.md](PHASE6_VALIDATION.md).
+
 ## Validation snapshot
 
 Captured on 2026-08-29 with Go 1.23.12 on an AMD EPYC 9V74 runner. These are

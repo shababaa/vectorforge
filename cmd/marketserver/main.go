@@ -1,6 +1,6 @@
 // marketserver runs the embedded database as a single-process HTTP service.
-// It is intentionally one binary: the database does not yet provide safe
-// inter-process file locking, so horizontal replicas are outside Phase 5.
+// A read-only process can serve a point-in-time backup; the source database
+// remains single-writer and is protected by an OS advisory file lock.
 package main
 
 import (
@@ -36,6 +36,7 @@ func run() error {
 	dbPath := flag.String("db", "market-service.db", "database file")
 	address := flag.String("addr", "127.0.0.1:8080", "HTTP listen address")
 	seedDemo := flag.Bool("seed-demo", false, "seed the repeatable synthetic end-to-end demonstration")
+	readOnly := flag.Bool("read-only", false, "serve an existing point-in-time replica without workers or mutations")
 	workers := flag.Int("workers", 1, "background workers (1-4)")
 	requestTimeout := flag.Duration("request-timeout", 10*time.Second, "per-request API timeout")
 	shutdownTimeout := flag.Duration("shutdown-timeout", 15*time.Second, "graceful shutdown budget")
@@ -46,13 +47,16 @@ func run() error {
 	if *shutdownTimeout < time.Second || *shutdownTimeout > time.Minute {
 		return errors.New("shutdown timeout must be between one second and one minute")
 	}
+	if *readOnly && *seedDemo {
+		return errors.New("read-only mode cannot seed demonstration data")
+	}
 	level, err := parseLogLevel(*logLevel)
 	if err != nil {
 		return err
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
-	db, err := byodb.OpenDB(*dbPath)
+	db, err := byodb.OpenDBWithOptions(*dbPath, byodb.DBOptions{ReadOnly: *readOnly})
 	if err != nil {
 		return err
 	}
@@ -109,10 +113,16 @@ func run() error {
 
 	root, stop := signal.NotifyContext(context.Background(), shutdownSignals()...)
 	defer stop()
-	if _, err := manager.Start(root); err != nil {
-		return err
+	if !*readOnly {
+		if _, err := manager.Start(root); err != nil {
+			return err
+		}
 	}
-	service, err := marketservice.NewServer(marketservice.Config{Repository: repository, Jobs: manager, Logger: logger, APIToken: strings.TrimSpace(os.Getenv("MARKET_API_TOKEN")), RequestTimeout: *requestTimeout, MaxInFlight: *maxInFlight})
+	apiToken := strings.TrimSpace(os.Getenv("MARKET_API_TOKEN"))
+	if *readOnly {
+		apiToken = ""
+	}
+	service, err := marketservice.NewServer(marketservice.Config{Repository: repository, Jobs: manager, Logger: logger, APIToken: apiToken, RequestTimeout: *requestTimeout, MaxInFlight: *maxInFlight, ReadOnly: *readOnly})
 	if err != nil {
 		return err
 	}
@@ -127,7 +137,7 @@ func run() error {
 	}
 	serveError := make(chan error, 1)
 	go func() { serveError <- httpServer.Serve(listener) }()
-	logger.Info("market service started", "address", listener.Addr().String(), "database", *dbPath, "schema_version", market.SchemaVersion, "mutations_enabled", strings.TrimSpace(os.Getenv("MARKET_API_TOKEN")) != "", "job_kinds", manager.Capabilities())
+	logger.Info("market service started", "address", listener.Addr().String(), "database", *dbPath, "schema_version", market.SchemaVersion, "read_only", *readOnly, "mutations_enabled", apiToken != "", "job_kinds", manager.Capabilities())
 	select {
 	case err := <-serveError:
 		if !errors.Is(err, http.ErrServerClosed) {

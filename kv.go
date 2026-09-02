@@ -82,6 +82,9 @@ func (kv *KV) Commit(tx *KVTX) (err error) {
 	if len(tx.writes) == 0 {
 		return nil
 	}
+	if kv.readOnly {
+		return ErrReadOnly
+	}
 	if kv.detectConflictLocked(tx) {
 		return ErrConflict
 	}
@@ -181,6 +184,39 @@ func (tx *KVTX) Del(req *DeleteReq) bool {
 	tx.pending.insert(req.Key, []byte{flagDeleted})
 	tx.trackWrite(req.Key)
 	return true
+}
+
+// DeleteRange marks at most limit keys in [start, stop) for deletion and
+// reports whether another batch remains. Collection happens before mutation so
+// the merged snapshot/pending iterator is never invalidated underneath itself.
+func (tx *KVTX) DeleteRange(start, stop []byte, limit int) (deleted int, more bool, err error) {
+	tx.assertActive()
+	if limit <= 0 || limit > MaxDeleteRangeKeys {
+		return 0, false, fmt.Errorf("range delete limit must be between 1 and %d", MaxDeleteRangeKeys)
+	}
+	if stop != nil && start != nil && bytes.Compare(start, stop) >= 0 {
+		return 0, false, nil
+	}
+	tx.TrackRange(start, stop)
+	iterator := tx.seekNoTrack(start, CMP_GE)
+	keys := make([][]byte, 0, limit)
+	for iterator.Valid() && len(keys) < limit {
+		key, _ := iterator.Deref()
+		if stop != nil && bytes.Compare(key, stop) >= 0 {
+			break
+		}
+		keys = append(keys, key)
+		iterator.Next()
+	}
+	if iterator.Valid() {
+		key, _ := iterator.Deref()
+		more = stop == nil || bytes.Compare(key, stop) < 0
+	}
+	for _, key := range keys {
+		tx.pending.insert(key, []byte{flagDeleted})
+		tx.trackWrite(key)
+	}
+	return len(keys), more, nil
 }
 
 func (tx *KVTX) assertActive() {

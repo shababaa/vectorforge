@@ -110,16 +110,23 @@ artifact. REST was selected over adding a duplicate gRPC surface in this
 student phase. See [service design](SERVICE.md) and
 [validation evidence](PHASE5_VALIDATION.md).
 
-## Phase 6 — database systems depth
+## Phase 6 — database systems depth (complete)
 
-- Inter-process file locking and read-only replicas
-- Write batching/profile-driven allocation improvements
-- Table dropping and efficient range deletion
-- Prefix compression for time-series keys
-- Fuzzing, crash-fault injection, and long-running recovery tests
+- [x] Linux/Windows inter-process file locks, explicit read-only opens, and durable snapshot replicas
+- [x] Atomic mixed-table write batches and profile-driven B+tree split allocation improvements
+- [x] SQL/API table dropping and bounded, resumable range deletion with secondary-index cleanup
+- [x] Backward-readable storage format v3 with leaf-page prefix compression for time-series keys
+- [x] Native Go fuzz targets, child-process crash failpoints, and repeated reopen/recovery churn
 
 Exit criteria: publish before/after benchmark evidence and document every
 durability assumption.
+
+Evidence: the committed benchmark reduced the 1,000-key time-series insertion
+median from 74.42 ms to 17.36 ms and allocation bytes from 179.02 MB to 26.86
+MB on the same runner. The compression fixture stored 112,330 bytes instead of
+204,234 logical bytes across live leaves. Exact commands, raw samples,
+crash-boundary results, and filesystem assumptions are in
+[Phase 6 validation](PHASE6_VALIDATION.md) and [durability](DURABILITY.md).
 
 ## Resume-ready metrics to earn, not invent
 

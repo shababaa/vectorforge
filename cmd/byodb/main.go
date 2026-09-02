@@ -13,13 +13,22 @@ import (
 func main() {
 	path := flag.String("db", "byodb.db", "database file")
 	command := flag.String("c", "", "execute one query and exit")
+	readOnly := flag.Bool("read-only", false, "open an existing database without write access")
+	backup := flag.String("backup", "", "write a durable point-in-time copy and exit")
 	flag.Parse()
 
-	db, err := byodb.OpenDB(*path)
+	db, err := byodb.OpenDBWithOptions(*path, byodb.DBOptions{ReadOnly: *readOnly})
 	if err != nil {
 		fatal(err)
 	}
 	defer db.Close()
+	if *backup != "" {
+		if err := db.Backup(*backup); err != nil {
+			fatal(err)
+		}
+		fmt.Printf("backup created: %s\n", *backup)
+		return
+	}
 	if *command != "" {
 		result, err := db.Exec(*command)
 		if err != nil {
@@ -48,7 +57,7 @@ func main() {
 			case ".quit", ".exit":
 				return
 			case ".help":
-				fmt.Println(".tables  list tables\n.quit    exit\nSQL-like statements: CREATE, INSERT, SELECT, UPDATE, DELETE")
+				fmt.Println(".tables  list tables\n.quit    exit\nSQL-like statements: CREATE, DROP, INSERT, SELECT, UPDATE, DELETE")
 			case ".tables":
 				result, err := db.Exec("SELECT name FROM @table;")
 				if err != nil {

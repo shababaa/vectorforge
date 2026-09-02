@@ -67,6 +67,7 @@ type QLUpdate struct {
 
 type QLDelete struct{ QLScan }
 type QLCreate struct{ Def TableDef }
+type QLDrop struct{ Table string }
 
 type tokenKind uint8
 
@@ -248,6 +249,8 @@ func (p *Parser) statement() any {
 	switch {
 	case p.keyword("create", "table"):
 		return p.createTable()
+	case p.keyword("drop", "table"):
+		return &QLDrop{Table: p.ident()}
 	case p.keyword("select"):
 		return p.selectStmt()
 	case p.keyword("insert", "into"):
@@ -257,7 +260,7 @@ func (p *Parser) statement() any {
 	case p.keyword("delete", "from"):
 		return p.deleteStmt()
 	default:
-		p.fail("expected CREATE, SELECT, INSERT, UPDATE, or DELETE")
+		p.fail("expected CREATE, DROP, SELECT, INSERT, UPDATE, or DELETE")
 		return nil
 	}
 }

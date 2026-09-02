@@ -30,12 +30,50 @@ type AnalysisSummary struct {
 	Limitations []string                 `json:"limitations"`
 }
 
+// ForecastView is the stable HTTP representation of a stored forecast. Domain
+// records intentionally mirror the storage schema and are not an API contract;
+// keeping the JSON tags here prevents Go field names from leaking to clients.
+type ForecastView struct {
+	RunID                 string `json:"run_id"`
+	Symbol                string `json:"symbol"`
+	Interval              string `json:"interval"`
+	AsOfTimestamp         int64  `json:"as_of_timestamp"`
+	HorizonSeconds        int64  `json:"horizon_seconds"`
+	TargetTimestamp       int64  `json:"target_timestamp"`
+	BaselineClose         int64  `json:"baseline_close"`
+	PredictedClose        int64  `json:"predicted_close"`
+	LowerBound            int64  `json:"lower_bound"`
+	UpperBound            int64  `json:"upper_bound"`
+	ConfidencePPM         int64  `json:"confidence_ppm"`
+	HasActual             bool   `json:"has_actual"`
+	ActualClose           int64  `json:"actual_close"`
+	EvaluatedAt           int64  `json:"evaluated_at"`
+	AbsoluteError         int64  `json:"absolute_error"`
+	AbsolutePercentagePPM int64  `json:"absolute_percentage_ppm"`
+	DirectionCorrect      bool   `json:"direction_correct"`
+	CreatedAt             int64  `json:"created_at"`
+}
+
+func forecastView(value market.Forecast) ForecastView {
+	return ForecastView{
+		RunID: value.RunID, Symbol: value.Symbol, Interval: value.Interval,
+		AsOfTimestamp: value.AsOfTimestamp, HorizonSeconds: value.HorizonSeconds,
+		TargetTimestamp: value.TargetTimestamp, BaselineClose: value.BaselineClose,
+		PredictedClose: value.PredictedClose, LowerBound: value.LowerBound,
+		UpperBound: value.UpperBound, ConfidencePPM: value.ConfidencePPM,
+		HasActual: value.HasActual, ActualClose: value.ActualClose,
+		EvaluatedAt: value.EvaluatedAt, AbsoluteError: value.AbsoluteError,
+		AbsolutePercentagePPM: value.AbsolutePercentagePPM,
+		DirectionCorrect:      value.DirectionCorrect, CreatedAt: value.CreatedAt,
+	}
+}
+
 type Overview struct {
 	Symbol    string                      `json:"symbol"`
 	Interval  string                      `json:"interval"`
 	Candles   []market.Candle             `json:"candles"`
 	Feature   *market.FeatureSnapshot     `json:"feature,omitempty"`
-	Forecasts []market.Forecast           `json:"forecasts"`
+	Forecasts []ForecastView              `json:"forecasts"`
 	Model     *ModelSummary               `json:"model,omitempty"`
 	Analysis  *AnalysisSummary            `json:"analysis,omitempty"`
 	Demo      *market.ServiceDemoManifest `json:"demo,omitempty"`
@@ -44,7 +82,7 @@ type Overview struct {
 }
 
 func buildOverview(repository *market.Repository, symbol, interval string, limit int) (Overview, error) {
-	result := Overview{Symbol: symbol, Interval: interval, Forecasts: []market.Forecast{}, Notices: []string{
+	result := Overview{Symbol: symbol, Interval: interval, Forecasts: []ForecastView{}, Notices: []string{
 		"Educational system; outputs are not financial advice.",
 		"Prediction intervals show nominal empirical coverage, not profit probability.",
 	}}
@@ -77,9 +115,13 @@ func buildOverview(repository *market.Repository, symbol, interval string, limit
 		return result, nil
 	}
 	result.Demo = &manifest
-	result.Forecasts, err = repository.ForecastsAt(manifest.ModelRunID, symbol, interval, manifest.ForecastAsOf, 10)
+	forecasts, err := repository.ForecastsAt(manifest.ModelRunID, symbol, interval, manifest.ForecastAsOf, 10)
 	if err != nil {
 		return result, err
+	}
+	result.Forecasts = make([]ForecastView, len(forecasts))
+	for index := range forecasts {
+		result.Forecasts[index] = forecastView(forecasts[index])
 	}
 	card, err := repository.PredictionModelCard(manifest.ExperimentID)
 	if err != nil {

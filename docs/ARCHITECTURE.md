@@ -22,7 +22,8 @@ flowchart TD
     J --> I
 ```
 
-The database is an embedded single-process Go engine. The market package is a
+The database is an embedded single-writer Go engine with OS-enforced process
+ownership and point-in-time read-only snapshot files. The market package is a
 domain layer, not a fork of the storage engine. It uses public transactions,
 records, composite indexes, and scans in the same way an external application
 would.

@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.0 — Database systems depth
+
+- Added non-blocking OS file locks on Linux/macOS/BSD and Windows: one writer
+  owns a database file, read-only handles may share it only when no writer does,
+  and lock conflicts return the stable `ErrDatabaseLocked` error.
+- Added explicit read-only opens, atomic fsynced backup files, a read-only
+  `marketserver` mode for point-in-time replicas, and CLI backup/read-only flags.
+- Added atomic mixed-table write batches, bounded resumable relational range
+  deletion, physical prefix-range deletion, catalog-safe table dropping, and
+  `DROP TABLE` support.
+- Added storage format v3 leaf-page prefix compression while preserving reads of
+  format-v2 files; table prefixes are never reused after a drop.
+- Replaced allocation-heavy trial node splits with encoded-size arithmetic and
+  balance-aware compressed splits, with reproducible before/after benchmarks.
+- Added deterministic commit-boundary crash injection in child processes,
+  30-round reopen churn, compression recovery tests, and codec/B+tree/parser
+  fuzz targets in CI.
+- Fixed the dashboard forecast wire contract by introducing a tagged API DTO;
+  invalid forecast fields can no longer poison the entire Canvas chart with NaN.
+- Documented locking, filesystem, `fsync`, atomicity, backup, corruption, and
+  format-compatibility assumptions explicitly.
+
 ## v0.6.0 — Single-process market service
 
 - Added schema v5 with durable service jobs, hashed idempotency keys, bounded

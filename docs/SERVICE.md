@@ -1,4 +1,4 @@
-# Phase 5 service and dashboard runbook
+# Service, dashboard, and Phase 6 replica runbook
 
 Phase 5 turns the embedded database into a single-process application service.
 It is deliberately small enough to explain at a whiteboard: Go's `net/http`, a
@@ -46,10 +46,32 @@ flowchart TD
     R --> D[("byodb file")]
 ```
 
-One process owns the database file. Phase 6 adds inter-process locking; until
-then, starting two servers against the same path is unsupported. A queue is
-still useful here because long ingestion/model tasks should not occupy an HTTP
-request or disappear when a client disconnects.
+One writing process owns the database file under an exclusive OS lock. A second
+writer—or a reader pointed at that same live file—is rejected immediately.
+Read-only services use an independent point-in-time snapshot, described below.
+A queue is still useful because long ingestion/model tasks should not occupy an
+HTTP request or disappear when a client disconnects.
+
+## Point-in-time read-only service
+
+Stop the CLI-owned writer, create a snapshot, and serve it on another port:
+
+```sh
+go run ./cmd/byodb -db service-demo.db -backup service-replica.db
+go run ./cmd/marketserver \
+  -db service-replica.db -read-only -addr 127.0.0.1:8081
+```
+
+`-read-only` validates the existing schema, starts no background workers,
+ignores `MARKET_API_TOKEN`, and serves dashboard/GET/observability routes.
+`-seed-demo` is rejected in this mode. Multiple read-only processes can share
+the replica file, although independent files are preferable for deployment.
+
+The external CLI cannot snapshot a file while another process owns its writer
+lock. An application already embedding the live writer can call
+`db.Backup("replica.db")`; that method serializes against commit, fsyncs a
+temporary file, and publishes it by rename. This is a full snapshot and manual
+refresh, not log shipping or live replication.
 
 ## API contract
 
@@ -130,6 +152,7 @@ mutations even when a bearer token is present.
 | --- | --- | --- |
 | `-addr` | `127.0.0.1:8080` | Safe local binding |
 | `-workers` | `1` | Matches the educational engine's write profile |
+| `-read-only` | `false` | Serve an existing snapshot with no workers/mutations |
 | `-request-timeout` | `10s` | Bounds synchronous API work |
 | `-shutdown-timeout` | `15s` | Allows HTTP and workers to stop cleanly |
 | `-max-in-flight` | `64` | Rejects overload instead of exhausting memory |
@@ -178,7 +201,8 @@ jobs, wait within the configured budget, then close the database. Windows uses
 Windows cannot call `Sync` on an open directory through Go's standard library.
 The database file itself is still synced at its durability boundaries.
 
-This phase does not add TLS, users/roles, multiple database processes,
-distributed workers, replicas, or exactly-once external side effects. Put a
-production TLS/auth proxy in front only after Phase 6 supplies process locking;
-do not represent the student server as an internet-facing trading service.
+The engine now prevents unsafe multiple owners and can serve point-in-time
+replicas, but it does not add TLS, users/roles, live replication, distributed
+workers, or exactly-once external side effects. A production TLS/auth proxy
+would not turn the educational engine into an internet-facing trading service.
+See [DURABILITY.md](DURABILITY.md) before making a persistence claim.

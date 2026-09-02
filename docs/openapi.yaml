@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: BYODB Market Intelligence API
-  version: 0.6.0
-  description: Educational, single-process API. Predictions are not financial advice.
+  version: 0.7.0
+  description: Educational, single-writer API with point-in-time read-only snapshot mode. Predictions are not financial advice.
 servers:
   - url: http://127.0.0.1:8080
 paths:

@@ -61,7 +61,7 @@ function render(data) {
   setText("updated-at", latest ? `Snapshot through ${date(latest.timestamp)} UTC · ${candles.length} displayed candles` : "No candles stored for this symbol.");
   setText("chart-start", date(first?.timestamp));
   setText("chart-end", date(latest?.timestamp));
-  setText("db-detail", `Schema v5 · page version ${data.storage.version}`);
+  setText("db-detail", `Schema v5 · storage format ${data.storage.format_version}`);
   setText("storage-detail", `${data.storage.page_count.toLocaleString()} pages · ${(data.storage.file_size_bytes / 1_048_576).toFixed(2)} MiB · ${data.storage.free_pages} reusable pages`);
 
   renderForecast(data.forecasts?.at(-1));
@@ -140,7 +140,9 @@ function drawChart(candles, forecast) {
   context.clearRect(0, 0, width, height);
   if (!candles.length) return;
   const values = candles.map((candle) => candle.adjusted_close / PRICE_SCALE);
-  if (forecast) values.push(forecast.lower_bound / PRICE_SCALE, forecast.upper_bound / PRICE_SCALE);
+  const forecastValues = forecast ? [forecast.lower_bound, forecast.upper_bound, forecast.predicted_close].map((value) => value / PRICE_SCALE) : [];
+  const validForecast = forecastValues.length === 3 && forecastValues.every(Number.isFinite);
+  if (validForecast) values.push(forecastValues[0], forecastValues[1]);
   let low = Math.min(...values);
   let high = Math.max(...values);
   const margin = Math.max((high - low) * .12, high * .005);
@@ -167,10 +169,10 @@ function drawChart(candles, forecast) {
   context.strokeStyle = "#53d6bd";
   context.lineWidth = 2;
   context.stroke();
-  if (forecast) {
+  if (validForecast) {
     const lastX = x(candles.length - 1);
     const futureX = x(candles.length);
-    const predicted = forecast.predicted_close / PRICE_SCALE;
+    const predicted = forecastValues[2];
     context.save();
     context.setLineDash([5, 5]);
     context.strokeStyle = "#f2b55a";
@@ -178,7 +180,7 @@ function drawChart(candles, forecast) {
     context.restore();
     context.strokeStyle = "rgba(242, 181, 90, .45)";
     context.lineWidth = 5;
-    context.beginPath(); context.moveTo(futureX, y(forecast.lower_bound / PRICE_SCALE)); context.lineTo(futureX, y(forecast.upper_bound / PRICE_SCALE)); context.stroke();
+    context.beginPath(); context.moveTo(futureX, y(forecastValues[0])); context.lineTo(futureX, y(forecastValues[1])); context.stroke();
     context.fillStyle = "#f2b55a";
     context.beginPath(); context.arc(futureX, y(predicted), 4, 0, Math.PI * 2); context.fill();
   }

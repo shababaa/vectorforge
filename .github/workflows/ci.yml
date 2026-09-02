@@ -34,6 +34,12 @@ jobs:
       - name: Race detector
         if: runner.os == 'Linux'
         run: go test -buildvcs=false -race ./...
+      - name: Seeded fuzz smoke tests
+        if: runner.os == 'Linux'
+        run: |
+          go test -buildvcs=false ./ -run '^$' -fuzz '^FuzzCodecRoundTrip$' -fuzztime=3s
+          go test -buildvcs=false ./ -run '^$' -fuzz '^FuzzBTreeStateMachine$' -fuzztime=3s
+          go test -buildvcs=false ./ -run '^$' -fuzz '^FuzzParserNeverPanics$' -fuzztime=3s
 
   container:
     name: Container build

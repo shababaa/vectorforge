@@ -55,6 +55,12 @@ func executeStatement(tx *DBTX, stmt any) (*Result, error) {
 			return nil, err
 		}
 		return &Result{Message: "table created"}, nil
+	case *QLDrop:
+		deleted, err := tx.TableDrop(node.Table)
+		if err != nil {
+			return nil, err
+		}
+		return &Result{RowsAffected: deleted, Message: fmt.Sprintf("table dropped (%d physical key(s) removed)", deleted)}, nil
 	case *QLInsert:
 		return executeInsert(tx, node)
 	case *QLSelect:

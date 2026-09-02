@@ -183,6 +183,21 @@ func TestSeededHTTPServiceContract(t *testing.T) {
 	if response.Header.Get("X-Request-ID") != "contract-request-01" || len(overviewEnvelope.Data.Candles) != 80 || overviewEnvelope.Data.Model == nil || overviewEnvelope.Data.Analysis == nil || len(overviewEnvelope.Data.Forecasts) != 1 {
 		t.Fatalf("overview=%+v headers=%v", overviewEnvelope.Data, response.Header)
 	}
+	var wireEnvelope struct {
+		Data struct {
+			Forecasts []map[string]json.RawMessage `json:"forecasts"`
+		} `json:"data"`
+	}
+	getJSON("/api/v1/overview?symbol=SYNTH&interval=1d&limit=80", &wireEnvelope)
+	forecast := wireEnvelope.Data.Forecasts[0]
+	for _, field := range []string{"predicted_close", "baseline_close", "lower_bound", "upper_bound", "confidence_ppm", "target_timestamp"} {
+		if _, ok := forecast[field]; !ok {
+			t.Fatalf("forecast wire contract is missing %q: %v", field, forecast)
+		}
+	}
+	if _, leaked := forecast["PredictedClose"]; leaked {
+		t.Fatalf("forecast leaked a Go field name: %v", forecast)
+	}
 	var ready struct {
 		Data struct {
 			Status string `json:"status"`

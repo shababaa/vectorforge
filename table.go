@@ -32,16 +32,42 @@ var TDEF_TABLE = &TableDef{
 	Indexes: [][]string{{"name"}}, Prefixes: []uint32{2},
 }
 
+const (
+	// MaxDeleteRangeKeys bounds each physical key batch held temporarily while
+	// deleting a range. Larger logical deletes proceed through repeated batches
+	// in the same transaction.
+	MaxDeleteRangeKeys = 4096
+	// DefaultDeleteRangeRows keeps the public relational operation predictable.
+	DefaultDeleteRangeRows = 1000
+	MaxDeleteRangeRows     = 10_000
+)
+
 type DB struct {
 	Path string
 
-	mu     sync.RWMutex
-	kv     *KV
-	tables map[string]*TableDef
+	mu      sync.RWMutex
+	kv      *KV
+	tables  map[string]*TableDef
+	options DBOptions
+}
+
+// DBOptions controls how the embedded relational database is opened.
+type DBOptions struct {
+	ReadOnly bool
 }
 
 func OpenDB(path string) (*DB, error) {
-	db := &DB{Path: path}
+	return OpenDBWithOptions(path, DBOptions{})
+}
+
+// OpenDBReadOnly opens an existing database with a shared process lock. It can
+// coexist with other read-only handles, but not with the database writer.
+func OpenDBReadOnly(path string) (*DB, error) {
+	return OpenDBWithOptions(path, DBOptions{ReadOnly: true})
+}
+
+func OpenDBWithOptions(path string, options DBOptions) (*DB, error) {
+	db := &DB{Path: path, options: options}
 	if err := db.Open(); err != nil {
 		return nil, err
 	}
@@ -52,7 +78,7 @@ func (db *DB) Open() error {
 	if db.Path == "" {
 		return errors.New("database path is empty")
 	}
-	kv, err := OpenKV(db.Path)
+	kv, err := OpenKVWithOptions(db.Path, KVOptions{ReadOnly: db.options.ReadOnly})
 	if err != nil {
 		return err
 	}
@@ -66,6 +92,17 @@ func (db *DB) Open() error {
 		return err
 	}
 	return nil
+}
+
+// ReadOnly reports whether this handle permits commits containing writes.
+func (db *DB) ReadOnly() bool { return db.options.ReadOnly }
+
+// Backup creates a durable point-in-time copy suitable for a read-only process.
+func (db *DB) Backup(path string) error {
+	if db.kv == nil {
+		return ErrClosed
+	}
+	return db.kv.Backup(path)
 }
 
 func (db *DB) Close() error {
@@ -149,7 +186,11 @@ func (db *DB) Commit(tx *DBTX) error {
 	if len(tx.schemaChanges) > 0 {
 		db.mu.Lock()
 		for name, def := range tx.schemaChanges {
-			db.tables[name] = cloneTableDef(def)
+			if def == nil {
+				delete(db.tables, name)
+			} else {
+				db.tables[name] = cloneTableDef(def)
+			}
 		}
 		db.mu.Unlock()
 	}
@@ -324,6 +365,59 @@ func (db *DB) TableNew(def *TableDef) error {
 		return err
 	}
 	return db.Commit(&tx)
+}
+
+// TableDrop atomically removes a table's primary rows, secondary-index keys,
+// and catalog record. Prefixes are never reused, so stale keys cannot become
+// visible as a different table after a crash or later CREATE.
+func (tx *DBTX) TableDrop(name string) (int, error) {
+	def := tx.tables[name]
+	if def == nil {
+		return 0, fmt.Errorf("table not found: %s", name)
+	}
+	if name == TDEF_META.Name || name == TDEF_TABLE.Name {
+		return 0, fmt.Errorf("cannot drop reserved table: %s", name)
+	}
+	deleted := 0
+	for _, prefix := range def.Prefixes {
+		start := prefixKey(prefix)
+		stop := keySuccessor(start)
+		for {
+			count, more, err := tx.kv.DeleteRange(start, stop, MaxDeleteRangeKeys)
+			if err != nil {
+				return deleted, err
+			}
+			deleted += count
+			if !more {
+				break
+			}
+		}
+	}
+	catalog := *(&Record{}).AddString("name", name)
+	if changed, err := tx.Delete(TDEF_TABLE.Name, catalog); err != nil {
+		return deleted, err
+	} else if !changed {
+		return deleted, fmt.Errorf("table catalog record is missing: %s", name)
+	}
+	delete(tx.tables, name)
+	tx.schemaChanges[name] = nil
+	return deleted, nil
+}
+
+func (db *DB) TableDrop(name string) (int, error) {
+	var tx DBTX
+	if err := db.Begin(&tx); err != nil {
+		return 0, err
+	}
+	deleted, err := tx.TableDrop(name)
+	if err != nil {
+		db.Abort(&tx)
+		return 0, err
+	}
+	if err := db.Commit(&tx); err != nil {
+		return 0, err
+	}
+	return deleted, nil
 }
 
 func checkRecord(def *TableDef, rec Record, required int) ([]Value, error) {
@@ -537,6 +631,114 @@ func (db *DB) Delete(table string, rec Record) (bool, error) {
 	}
 	if err := db.Commit(&tx); err != nil {
 		return false, err
+	}
+	return changed, nil
+}
+
+// DeleteRangeResult distinguishes a complete bounded delete from one that has
+// additional matching rows, allowing callers to page maintenance work.
+type DeleteRangeResult struct {
+	Deleted int
+	More    bool
+}
+
+func (tx *DBTX) DeleteRange(table string, scan Scanner, limit int) (DeleteRangeResult, error) {
+	if limit == 0 {
+		limit = DefaultDeleteRangeRows
+	}
+	if limit < 1 || limit > MaxDeleteRangeRows {
+		return DeleteRangeResult{}, fmt.Errorf("range delete row limit must be between 1 and %d", MaxDeleteRangeRows)
+	}
+	def := tx.tables[table]
+	if def == nil {
+		return DeleteRangeResult{}, fmt.Errorf("table not found: %s", table)
+	}
+	if err := tx.Scan(table, &scan); err != nil {
+		return DeleteRangeResult{}, err
+	}
+	keys := make([]Record, 0, limit)
+	for scan.Valid() && len(keys) < limit {
+		var row Record
+		if err := scan.Deref(&row); err != nil {
+			return DeleteRangeResult{}, err
+		}
+		keys = append(keys, Record{Cols: append([]string(nil), def.Cols[:def.PKeys]...), Vals: append([]Value(nil), row.Vals[:def.PKeys]...)})
+		scan.Next()
+	}
+	result := DeleteRangeResult{More: scan.Valid()}
+	for _, key := range keys {
+		changed, err := tx.Delete(table, key)
+		if err != nil {
+			return DeleteRangeResult{}, err
+		}
+		if changed {
+			result.Deleted++
+		}
+	}
+	return result, nil
+}
+
+func (db *DB) DeleteRange(table string, scan Scanner, limit int) (DeleteRangeResult, error) {
+	var tx DBTX
+	if err := db.Begin(&tx); err != nil {
+		return DeleteRangeResult{}, err
+	}
+	result, err := tx.DeleteRange(table, scan, limit)
+	if err != nil {
+		db.Abort(&tx)
+		return DeleteRangeResult{}, err
+	}
+	if err := db.Commit(&tx); err != nil {
+		return DeleteRangeResult{}, err
+	}
+	return result, nil
+}
+
+// Mutation represents one element of an atomic, mixed-table write batch.
+type Mutation struct {
+	Table  string
+	Record Record
+	Mode   int
+}
+
+func (tx *DBTX) ApplyBatch(mutations []Mutation) (int, error) {
+	if len(mutations) > MaxDeleteRangeRows {
+		return 0, fmt.Errorf("write batch exceeds %d mutations", MaxDeleteRangeRows)
+	}
+	changed := 0
+	for index, mutation := range mutations {
+		var applied bool
+		var err error
+		if mutation.Mode == MODE_DELETE {
+			applied, err = tx.Delete(mutation.Table, mutation.Record)
+		} else {
+			if mutation.Mode != MODE_UPSERT && mutation.Mode != MODE_UPDATE_ONLY && mutation.Mode != MODE_INSERT_ONLY {
+				return 0, fmt.Errorf("mutation %d: invalid mode %d", index, mutation.Mode)
+			}
+			applied, err = tx.Set(mutation.Table, mutation.Record, mutation.Mode)
+		}
+		if err != nil {
+			return 0, fmt.Errorf("mutation %d: %w", index, err)
+		}
+		if applied {
+			changed++
+		}
+	}
+	return changed, nil
+}
+
+func (db *DB) ApplyBatch(mutations []Mutation) (int, error) {
+	var tx DBTX
+	if err := db.Begin(&tx); err != nil {
+		return 0, err
+	}
+	changed, err := tx.ApplyBatch(mutations)
+	if err != nil {
+		db.Abort(&tx)
+		return 0, err
+	}
+	if err := db.Commit(&tx); err != nil {
+		return 0, err
 	}
 	return changed, nil
 }
