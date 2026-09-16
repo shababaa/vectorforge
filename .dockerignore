@@ -1,0 +1,9 @@
+.git
+.github
+*.db
+*.db-*
+*.exe
+*.out
+coverage.*
+tmp
+docs/*.png

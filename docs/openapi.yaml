@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: BYODB Market Intelligence API
+  version: 0.7.0
+  description: Educational, single-writer API with point-in-time read-only snapshot mode. Predictions are not financial advice.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /healthz:
+    get:
+      summary: Process liveness
+      operationId: health
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+  /readyz:
+    get:
+      summary: Database and schema readiness
+      operationId: ready
+      responses:
+        "200": { description: Ready }
+        "503": { $ref: "#/components/responses/Error" }
+  /metrics:
+    get:
+      summary: Prometheus text exposition
+      operationId: metrics
+      responses:
+        "200":
+          description: Process, HTTP, job, and database metrics
+          content:
+            text/plain:
+              schema: { type: string }
+  /api/v1/capabilities:
+    get:
+      summary: Runtime capabilities and enabled job kinds
+      operationId: capabilities
+      responses:
+        "200": { description: Capabilities }
+  /api/v1/overview:
+    get:
+      summary: Bounded dashboard snapshot
+      operationId: overview
+      parameters:
+        - { name: symbol, in: query, schema: { type: string, default: SYNTH } }
+        - { name: interval, in: query, schema: { type: string, default: 1d } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 21, maximum: 500, default: 120 } }
+      responses:
+        "200": { description: Candles, latest stored feature, forecast, model summary, analyst summary, and storage stats }
+        "400": { $ref: "#/components/responses/Error" }
+  /api/v1/model-cards/{id}:
+    get:
+      summary: Complete persisted prediction model card
+      operationId: modelCard
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200": { description: Model card }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/analyses/{id}:
+    get:
+      summary: Complete persisted analyst audit report
+      operationId: analysis
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200": { description: Analysis report, exact evidence, and lineage }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/jobs:
+    post:
+      summary: Submit a durable background job
+      operationId: submitJob
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kind, payload]
+              properties:
+                kind: { type: string, maxLength: 48 }
+                payload: { type: object, maxProperties: 24 }
+      responses:
+        "202": { description: New job accepted }
+        "200": { description: Existing idempotent job returned }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/jobs/{id}:
+    get:
+      summary: Read a durable job
+      operationId: job
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200": { description: Job state, request digest, and bounded result }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/jobs/{id}/cancel:
+    post:
+      summary: Request cooperative job cancellation
+      operationId: cancelJob
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200": { description: Cancellation recorded }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 120 }
+  responses:
+    Error:
+      description: Stable error envelope; internal errors are not exposed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  schemas:
+    Envelope:
+      type: object
+      required: [data, request_id]
+      properties:
+        data: {}
+        request_id: { type: string }
+    ErrorEnvelope:
+      type: object
+      required: [error, request_id]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+        request_id: { type: string }
