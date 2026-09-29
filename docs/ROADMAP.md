@@ -18,7 +18,7 @@ features.
 
 Exit criteria: deterministic demo runs from an empty file and every test passes.
 
-## Phase 2 — real data pipeline (engineering complete; universe acceptance pending)
+## Phase 2 — real data pipeline (complete)
 
 - [x] Official Twelve Data adapter behind a provider-neutral Go interface
 - [x] Shared rate limiting, `Retry-After`, exponential backoff, bounded windows,
@@ -34,10 +34,13 @@ Exit criteria: deterministic demo runs from an empty file and every test passes.
 Exit criteria: ingest and validate at least five years of daily data for a
 multi-asset universe with a repeatable CLI job.
 
-Status: a live five-year AAPL acceptance run passed with 1,254 observed of
-1,254 expected NYSE sessions, zero missing and zero unexpected dates. The
-repeatable CLI accepts a multi-asset universe, but the final AAPL/MSFT/SPY live
-artifact requires a personal Twelve Data key because the public demo key is
+Status: a live five-year AAPL Twelve Data run passed with 1,254 observed of
+1,254 expected NYSE sessions. The multi-asset exit check is the committed
+AAPL/MSFT/SPY Yahoo Chart snapshot for 2021-08-30 through 2026-08-27: each
+symbol has 1,254 sessions, zero missing and zero unexpected dates, zero 25%
+outliers, an idempotent reimport, and 1,234 feature snapshots.
+`TestFiveYearUniverseAcceptance` reruns that job. A personal Twelve Data key is
+still required for a live MSFT/SPY provider sync because the public demo key is
 restricted to demo symbols. See [Phase 2 validation](PHASE2_VALIDATION.md).
 
 ## Phase 3 — prediction service (complete for the educational baseline scope)
@@ -65,11 +68,12 @@ persistence on the frozen holdout (MAE 3.133439 vs 3.128548). Boosted stumps had
 0.58% lower holdout MAE, but that observation does not retroactively change model
 selection and is not a statistically established or tradable advantage.
 
-The Phase 2 multi-asset live acceptance remains open. Phase 3 does not promote a
-model into production or claim profitable trading. See [methodology and
-operations](PREDICTION.md) for bounds, interval caveats, and exact commands.
+Phase 3 does not promote a model into production or claim profitable trading.
+The multi-asset price history used for Phase 2 is not a multi-asset trading
+backtest. See [methodology and operations](PREDICTION.md) for bounds, interval
+caveats, and exact commands.
 
-## Phase 4 — grounded LLM analyst (engineering complete; live-model acceptance pending)
+## Phase 4 — grounded LLM analyst (complete)
 
 - [x] Native local Ollama structured-output adapter behind `LLMClient`
 - [x] SEC recent-filing metadata retrieval, canonical source IDs, hashes, and two-clock availability
@@ -83,11 +87,12 @@ Exit criteria: the analyst refuses unsupported claims and every visible claim
 can be traced to stored evidence.
 
 Implementation scope: Go computes and renders claims; the LLM selects evidence,
-not unrestricted prose. Sources currently cover SEC **metadata**, not filing
-contents or news sentiment. The deterministic demo/evaluation and adversarial
-validator tests pass. A real local-model evaluation and live SEC ingestion with
-the user's identifying User-Agent remain to be recorded; no fixture score is
-presented as LLM accuracy. See [analyst runbook](ANALYST.md) and
+not unrestricted prose. Sources cover SEC **metadata**, not filing contents or
+news sentiment. The deterministic demo and adversarial validator tests pass.
+A local Ollama run of `qwen2.5:1.5b` on 2026-09-29 scored 6/10 labelled
+decisions, with zero transport errors and four validator rejections. Live SEC
+retrieval stored the 20 most recent AAPL 10-K/10-Q/8-K metadata rows. Fixture
+scores are not presented as LLM accuracy. See [analyst runbook](ANALYST.md) and
 [validation evidence](PHASE4_VALIDATION.md).
 
 ## Phase 5 — service and dashboard (complete for the single-process scope)

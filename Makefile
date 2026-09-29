@@ -5,6 +5,9 @@ GO ?= go
 test:
 	$(GO) test -buildvcs=false ./...
 
+universe:
+	$(GO) test -buildvcs=false ./market -run TestFiveYearUniverseAcceptance -count=1 -v
+
 verify:
 	test -z "$$(gofmt -l .)"
 	$(GO) vet -buildvcs=false ./...

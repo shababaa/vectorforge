@@ -209,8 +209,8 @@ or consults future prices. Repeated insertion cannot overwrite original output.
   budget. It is intentionally conservative, not a high-throughput downloader.
 - Corporate-action adjustment covers splits for intraday adjusted-close
   reconstruction; dividend total-return adjustment is not claimed.
-- The LLM adapter is local Ollama only. Real-model quality is not established by
-  deterministic fixtures; live acceptance is explicitly pending.
+- The LLM adapter is local Ollama only. The recorded `qwen2.5:1.5b` contract run
+  is in the Phase 4 validation note; it is not a general reasoning benchmark.
 - Analyst output is controlled-language, daily-bar research commentary. SEC
   metadata is not a substitute for reading filings or analyzing trusted news.
 - Technical features are a starting set, not evidence of profitable alpha.

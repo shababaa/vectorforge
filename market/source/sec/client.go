@@ -128,7 +128,7 @@ func (c *Client) RecentFilings(ctx context.Context, symbol, cik string) ([]marke
 
 func ParseSubmissions(b []byte, symbol, cik string) ([]market.FilingSource, error) {
 	var payload struct {
-		CIK     json.Number `json:"cik"`
+		CIK     flexibleCIK `json:"cik"`
 		Tickers []string    `json:"tickers"`
 		Filings struct {
 			Recent struct {
@@ -142,7 +142,7 @@ func ParseSubmissions(b []byte, symbol, cik string) ([]market.FilingSource, erro
 	if len(b) > 4<<20 || json.Unmarshal(b, &payload) != nil {
 		return nil, errors.New("invalid SEC submissions JSON")
 	}
-	if !regexp.MustCompile(`^[0-9]{10}$`).MatchString(cik) || strings.TrimLeft(cik, "0") != strings.TrimLeft(payload.CIK.String(), "0") {
+	if !regexp.MustCompile(`^[0-9]{10}$`).MatchString(cik) || strings.TrimLeft(cik, "0") != strings.TrimLeft(string(payload.CIK), "0") {
 		return nil, errors.New("SEC CIK mismatch")
 	}
 	symbol = strings.ToUpper(strings.TrimSpace(symbol))
@@ -166,7 +166,7 @@ func ParseSubmissions(b []byte, symbol, cik string) ([]market.FilingSource, erro
 		default:
 			continue
 		}
-		at, err := time.Parse(time.RFC3339, p.Accepted[i])
+		at, err := time.Parse(time.RFC3339Nano, p.Accepted[i])
 		if err != nil {
 			return nil, errors.New("invalid SEC acceptance timestamp")
 		}
@@ -186,4 +186,28 @@ func ParseSubmissions(b []byte, symbol, cik string) ([]market.FilingSource, erro
 		out = out[:20]
 	}
 	return out, nil
+}
+
+// flexibleCIK accepts the numeric CIK used by older fixtures and the
+// zero-padded string the live submissions endpoint currently returns.
+type flexibleCIK string
+
+func (c *flexibleCIK) UnmarshalJSON(raw []byte) error {
+	if string(raw) == "null" {
+		return errors.New("missing CIK")
+	}
+	if len(raw) > 0 && raw[0] == '"' {
+		var text string
+		if err := json.Unmarshal(raw, &text); err != nil {
+			return err
+		}
+		*c = flexibleCIK(text)
+		return nil
+	}
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err != nil {
+		return err
+	}
+	*c = flexibleCIK(number.String())
+	return nil
 }

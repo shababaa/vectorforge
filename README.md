@@ -86,6 +86,18 @@ go run ./cmd/marketdb \
   -start-date 2021-08-29 -end-date 2026-08-27
 ```
 
+The same window is already checked in as a Yahoo Chart snapshot, so the
+multi-asset acceptance does not need a personal key:
+
+```sh
+go test ./market -run TestFiveYearUniverseAcceptance -count=1 -v
+```
+
+Each of AAPL, MSFT, and SPY has 1,254 NYSE sessions, full date coverage, and
+1,234 feature snapshots. Details and hashes are in
+[Phase 2 validation](docs/PHASE2_VALIDATION.md). That snapshot is not a live
+Twelve Data sync.
+
 The sync is restart-safe. It writes one bounded provider window at a time,
 persists a checkpoint after every committed page, overlaps two periods when it
 resumes to capture provider corrections, imports dividends and splits, updates
@@ -142,8 +154,8 @@ This offline demo is explicitly **not an LLM**. A real local Ollama adapter and
 SEC filing-metadata adapter are included; setup, live checks, and limitations
 are in the [analyst runbook](docs/ANALYST.md). The analyst ranks stored evidence,
 Go validates citations and renders claims, and unsupported output fails closed.
-See the [Phase 4 validation record](docs/PHASE4_VALIDATION.md) for measured results
-and the remaining live-model acceptance step.
+See the [Phase 4 validation record](docs/PHASE4_VALIDATION.md) for the fixture
+results and the recorded local-model score.
 
 Import real provider-neutral CSV data:
 

@@ -166,5 +166,6 @@ Tuning chose ridge. On the frozen holdout it slightly lost to persistence.
 Boosted stumps had 0.58% lower MAE, but this single-asset, single-window observation
 is not a significance test and does not change the tuning-selected model.
 No P&L, costs, slippage, execution, survivorship-bias correction, or point-in-time
-vendor vintage reconstruction is included. Real multi-asset acceptance remains
-open, and the LLM analyst is still Phase 4 work.
+vendor vintage reconstruction is included. The Phase 2 price-history acceptance
+covers AAPL, MSFT, and SPY; this prediction card is still single-asset. The
+recorded local-model analyst score is in the Phase 4 validation note.

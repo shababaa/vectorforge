@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.0 — Five-year multi-asset acceptance
+
+- Added a frozen Yahoo Chart daily snapshot for AAPL, MSFT, and SPY covering
+  2021-08-30 through 2026-08-27, with file hashes recorded in the Phase 2
+  validation note.
+- Added `TestFiveYearUniverseAcceptance`, which imports each file, checks an
+  idempotent reimport, and requires 1,254 observed NYSE sessions, zero missing
+  dates, zero unexpected dates, and full coverage.
+- Recorded 1,234 incremental feature snapshots and zero 25% log-return outliers
+  per symbol. This closes the Phase 2 multi-asset exit check without a personal
+  Twelve Data key. It is not a live provider sync and not a trading result.
+- Recorded a local Ollama evaluation of `qwen2.5:1.5b`: 6/10 labelled decisions,
+  zero completion errors, and four fail-closed rejections, including both
+  labelled abstentions. That score is contract compliance, not financial accuracy.
+- Accepted the live SEC submissions CIK string and fractional-second timestamps.
+  A live AAPL metadata fetch retained 20 recent 10-K/10-Q/8-K rows.
+
 ## v0.8.0 — Range-iterator key reuse
 
 - Stopped allocating a logical key on every visit to a prefix-compressed leaf.

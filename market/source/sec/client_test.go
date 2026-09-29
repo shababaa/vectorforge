@@ -21,6 +21,11 @@ func TestSECParsingAndIdentifiers(t *testing.T) {
 	if err != nil || len(rows) != 1 || rows[0].URL != "https://www.sec.gov/Archives/edgar/data/320193/000032019326000001/aapl-20251227.htm" || rows[0].RetrievedAt != 0 {
 		t.Fatalf("%+v %v", rows, err)
 	}
+	stringCIK := strings.Replace(submissions, `"cik":320193`, `"cik":"0000320193"`, 1)
+	stringCIK = strings.Replace(stringCIK, "2026-01-15T16:00:00Z", "2026-01-15T16:00:00.000Z", 1)
+	if rows, err = ParseSubmissions([]byte(stringCIK), "AAPL", "0000320193"); err != nil || len(rows) != 1 || rows[0].PublishedAt != time.Date(2026, 1, 15, 16, 0, 0, 0, time.UTC).Unix() {
+		t.Fatalf("string CIK payload: %+v %v", rows, err)
+	}
 	for _, raw := range []string{"{}", `[]`, strings.Replace(submissions, "320193", "123", 1), strings.Replace(submissions, `"AAPL"`, `"MSFT"`, 1), strings.Replace(submissions, `"4"`, `"8-K","10-K"`, 1), strings.Replace(submissions, "aapl-20251227.htm", "../../secret.htm", 1), strings.Replace(submissions, "2026-01-15T16:00:00Z", "yesterday", 1)} {
 		if _, err := ParseSubmissions([]byte(raw), "AAPL", "0000320193"); err == nil {
 			t.Fatal("invalid payload accepted", raw)
