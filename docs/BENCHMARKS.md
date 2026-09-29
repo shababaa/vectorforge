@@ -38,13 +38,35 @@ repository benchmarks. On the same Go 1.23.12 / AMD EPYC 9V74 runner:
 | Indexed latest-252 retrieval | 2.48 ms, 1.87 MB, 5,290 allocs | 0.338 ms, 0.546 MB, 6,340 allocs | 86.4% lower time; allocation count increased |
 
 The split search now measures candidate sizes without constructing candidate
-nodes and selects a balanced compressed boundary. Prefix decoding still creates
-more small objects in the range iterator, so the retrieval allocation-count
-regression is an explicit follow-up rather than a hidden benchmark detail.
+nodes and selects a balanced compressed boundary. Prefix decoding originally
+allocated a logical key on every iterator visit, which raised the retrieval
+allocation count by about 19.8% on the Phase 6 runner. Phase 7 keeps one reusable
+key buffer on the cursor. `Deref` still returns an independent copy, so callers
+can hold a key across `Next`.
 
 Run both benchmark groups with `make benchmark`. Full raw samples, compression
 statistics, limitations, and the exact comparison are recorded in
 [PHASE6_VALIDATION.md](PHASE6_VALIDATION.md).
+
+## Phase 7 range-iterator result
+
+Same `BenchmarkCandleRangeScan` command as above: three samples of five
+iterations, latest 252 of 2,000 ingested daily bars. Captured on 2026-09-29
+with Go 1.26.0 on Windows amd64 / AMD Ryzen 5 5600. This is a paired before/after
+on that machine only. It does not replace the Phase 6 EPYC table.
+
+| Revision | Median time | Bytes/op | Allocations/op |
+| --- | ---: | ---: | ---: |
+| Phase 6 iterator | 466.86 µs | 528,512 | 5,587 |
+| Reused compressed-key buffer | 482.72 µs | 496,025 | 4,229 |
+| Change | within sample noise | **6.2% lower** | **24.3% lower** |
+
+The five-iteration timing samples overlap, so latency is not claimed. Allocation
+counts were identical across the three samples. Raw Phase 6-parent samples were
+431.16 µs / 528,512 B / 5,587 allocs, 544.06 µs / 528,528 B / 5,587 allocs, and
+466.86 µs / 528,508 B / 5,587 allocs. Phase 7 samples were 397.16 µs / 496,012 B
+/ 4,229 allocs, 490.62 µs / 496,025 B / 4,229 allocs, and 482.72 µs / 496,025 B
+/ 4,229 allocs.
 
 ## Validation snapshot
 

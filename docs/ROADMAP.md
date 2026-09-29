@@ -128,6 +128,21 @@ MB on the same runner. The compression fixture stored 112,330 bytes instead of
 crash-boundary results, and filesystem assumptions are in
 [Phase 6 validation](PHASE6_VALIDATION.md) and [durability](DURABILITY.md).
 
+## Phase 7 — range-iterator allocation follow-up (complete)
+
+- [x] Leaf cursors rebuild a prefix-compressed key into one reused buffer
+- [x] Sentinel checks use the stored key length, so validity does not allocate
+- [x] Public `Deref` still copies key and value, so a held result stays stable across `Next`
+- [x] Forward and reverse compressed scans, plus an allocation ceiling, are tested
+
+Exit criteria: remove the Phase 6 per-visit key allocation on indexed candle
+scans and publish a same-machine before/after.
+
+Evidence: on Go 1.26.0 / Windows / AMD Ryzen 5 5600, `BenchmarkCandleRangeScan`
+dropped from 5,587 to 4,229 allocations/op and from 528,512 to 496,025 bytes/op.
+Timing samples overlapped, so no latency claim is made. See
+[benchmark methodology](BENCHMARKS.md).
+
 ## Resume-ready metrics to earn, not invent
 
 - Number of candles/assets and years of history ingested

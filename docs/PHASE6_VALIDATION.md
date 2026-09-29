@@ -105,9 +105,9 @@ selected nodes.
 | Indexed retrieval of latest 252 | 2.48 ms | 0.338 ms | 1.87 MB to 0.546 MB; 5,290 to 6,340 allocs |
 
 The range path became much faster and used fewer bytes, but reconstructed
-compressed keys increased the allocation count by about 19.8%. That remaining
-tradeoff is published instead of hidden; a future iterator could expose key
-views or reuse caller buffers.
+compressed keys increased the allocation count by about 19.8%. That tradeoff
+was published here; Phase 7 reuses one key buffer per cursor. The same-machine
+before/after is in [BENCHMARKS.md](BENCHMARKS.md).
 
 ### Compression fixture
 

@@ -58,6 +58,15 @@ bounded range deletion, `DROP TABLE`, crash-boundary child-process tests, and
 native fuzzing. See the [validation evidence](docs/PHASE6_VALIDATION.md) and the
 explicit [durability contract](docs/DURABILITY.md).
 
+## Phase 7 range scans
+
+Prefix compression stores one shared key prefix per leaf. The cursor rebuilds
+that logical key in a reused buffer instead of allocating it on every step.
+`Deref` still returns a copy that remains valid after `Next`. On the machine
+recorded in [benchmarks](docs/BENCHMARKS.md), scanning the latest 252 candles
+fell from 5,587 to 4,229 allocations per operation. That measurement is not a
+cross-machine latency claim.
+
 ## Market intelligence quick start
 
 Initialize the versioned market schema:
@@ -186,6 +195,7 @@ CSV headers: `timestamp,open,high,low,close,adjusted_close,volume`.
 | Prometheus metrics, JSON logs, Docker, and CI | Deployment and production-shaped engineering practices |
 | OS file locks + fsynced snapshot replicas | Cross-process safety with explicit replication semantics |
 | Prefix-compressed B+tree leaves | On-disk format evolution and time-series locality |
+| Reused compressed-key cursor buffer | Range scans without a per-step key allocation |
 | Crash failpoints + native fuzzing | Recovery reasoning beyond happy-path unit tests |
 | Bounded range delete + atomic table drop | Storage maintenance with index/catalog consistency |
 

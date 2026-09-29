@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.0 — Range-iterator key reuse
+
+- Stopped allocating a logical key on every visit to a prefix-compressed leaf.
+  Each B+tree cursor keeps one key buffer; uncompressed keys remain page views.
+- Sentinel detection uses the on-page key length, so iterator validity checks
+  no longer materialize the key.
+- Kept `KVIterator.Deref` as an independent copy. Callers can retain a key and
+  value across `Next`.
+- Added forward, reverse, and allocation-ceiling coverage for compressed scans.
+- Recorded a same-machine range-scan before/after: 5,587 to 4,229 allocs/op and
+  528,512 to 496,025 bytes/op, with no latency claim. Corrected the architecture
+  note that implied a database file could not be opened by more than one process.
+
 ## v0.7.0 — Database systems depth
 
 - Added non-blocking OS file locks on Linux/macOS/BSD and Windows: one writer

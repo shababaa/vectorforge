@@ -197,7 +197,7 @@ or consults future prices. Repeated insertion cannot overwrite original output.
 
 ## Known limits
 
-- One process may open a database file at a time.
+- One writer owns a database file. Read-only opens may share it only when no writer holds the lock. Live multi-writer replication is not implemented.
 - The Phase 5 queue is local to that one process; it is durable but not distributed.
 - Mutation auth is one configured bearer token, not a user/role system. TLS is expected at a trusted proxy and is not implemented by this student server.
 - SQL is the book's simplified dialect; the market repository uses typed APIs.

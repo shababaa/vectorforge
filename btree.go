@@ -121,15 +121,22 @@ func (n bnode) kvPos(idx uint16) int {
 }
 
 func (n bnode) key(idx uint16) []byte {
-	must(idx < n.nkeys(), "B+tree key out of range")
-	prefix, suffix := n.keyParts(idx)
-	if !n.compressed() {
-		return suffix
-	}
-	key := make([]byte, len(prefix)+len(suffix))
-	copy(key, prefix)
-	copy(key[len(prefix):], suffix)
+	key, _ := n.appendKey(nil, idx)
 	return key
+}
+
+// appendKey writes the logical key for idx. Copied is false when key is a
+// view of the page; callers must not retain that view across a node update
+// and must not append into it. Copied is true when key uses dst, grown if
+// dst's capacity is short.
+func (n bnode) appendKey(dst []byte, idx uint16) (key []byte, copied bool) {
+	prefix, suffix := n.keyParts(idx)
+	if len(prefix) == 0 {
+		return suffix, false
+	}
+	dst = append(dst[:0], prefix...)
+	dst = append(dst, suffix...)
+	return dst, true
 }
 
 func (n bnode) keyParts(idx uint16) ([]byte, []byte) {
@@ -693,10 +700,16 @@ func (tree *btree) delete(key []byte) bool {
 }
 
 // biter stores the entire root-to-leaf path, exactly as described in chapter 9.
+// keyOwned rebuilds a prefix-compressed leaf key without allocating on every
+// visit. keyView is either that buffer or a page suffix. It stays valid until
+// the next materialize after next or prev; KVIterator.Deref copies it out.
 type biter struct {
-	tree *btree
-	path []bnode
-	pos  []uint16
+	tree     *btree
+	path     []bnode
+	pos      []uint16
+	keyOwned []byte
+	keyView  []byte
+	keyReady bool
 }
 
 func (tree *btree) seekLE(key []byte) *biter {
@@ -756,15 +769,33 @@ func (it *biter) valid() bool {
 	if !it.rawValid() {
 		return false
 	}
-	k, _ := it.rawDeref()
-	return len(k) != 0 // hide the sentinel
+	last := len(it.path) - 1
+	return it.path[last].keyLen(it.pos[last]) != 0 // hide the sentinel
 }
 
 func (it *biter) rawDeref() ([]byte, []byte) {
 	last := len(it.path) - 1
 	n := it.path[last]
 	idx := it.pos[last]
-	return n.key(idx), n.val(idx)
+	return it.materializeKey(), n.val(idx)
+}
+
+func (it *biter) materializeKey() []byte {
+	if it.keyReady {
+		return it.keyView
+	}
+	last := len(it.path) - 1
+	key, copied := it.path[last].appendKey(it.keyOwned, it.pos[last])
+	if copied {
+		it.keyOwned = key
+	}
+	it.keyView = key
+	it.keyReady = true
+	return it.keyView
+}
+
+func (it *biter) invalidateKey() {
+	it.keyReady = false
 }
 
 func (it *biter) deref() ([]byte, []byte) {
@@ -774,6 +805,7 @@ func (it *biter) deref() ([]byte, []byte) {
 }
 
 func (it *biter) next() {
+	it.invalidateKey()
 	if len(it.path) == 0 {
 		return
 	}
@@ -803,6 +835,7 @@ func (it *biter) next() {
 }
 
 func (it *biter) prev() {
+	it.invalidateKey()
 	if len(it.path) == 0 {
 		return
 	}
