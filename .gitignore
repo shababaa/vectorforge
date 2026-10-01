@@ -7,3 +7,16 @@
 byodb-cli
 marketdb
 coverage.out
+
+# VectorForge local artifacts (datasets, model weights, environments, builds)
+vectorforge/ml/.venv/
+vectorforge/ml/data/
+vectorforge/ml/artifacts/
+vectorforge/web/node_modules/
+vectorforge/web/dist/
+vectorforge/runtime/
+# Per-query ranked lists from vfbench -suite real; regenerable, scored into results/ml/ann-relevance.json
+vectorforge/results/bench/runs/
+__pycache__/
+.pytest_cache/
+*.exe
