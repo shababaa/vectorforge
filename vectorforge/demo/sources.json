@@ -1,0 +1,42 @@
+{
+  "sources": [
+    {
+      "name": "byodb",
+      "root": "../..",
+      "description": "This repository: the byodb storage engine, market service, and VectorForge source code and docs",
+      "exclude": [
+        "docs/vectorforge",
+        "vectorforge/eval",
+        "vectorforge/ml/data",
+        "vectorforge/ml/artifacts",
+        "vectorforge/results",
+        "vectorforge/runtime",
+        "testdata",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "name": "go-stdlib",
+      "root": "${GOROOT}/src",
+      "description": "Selected Go standard library packages (BSD-3-Clause, from the local Go installation)",
+      "include": [
+        "net/http",
+        "net/url",
+        "database/sql",
+        "sync",
+        "context",
+        "encoding/json",
+        "bufio",
+        "io",
+        "os/exec",
+        "sort",
+        "strings",
+        "bytes",
+        "errors",
+        "log/slog",
+        "container"
+      ],
+      "exclude": ["*_test.go", "testdata", "h2_bundle.go", "internal", "example_*.go"]
+    }
+  ]
+}
