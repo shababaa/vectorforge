@@ -1,0 +1,16 @@
+{
+  "quora": {
+    "bytes": 15853968,
+    "md5": "18fb154900ba42a600f84b839c173167",
+    "md5_matches_beir_readme": true,
+    "sha256": "56aacd9dcc4d9c093b63f175afdda0e21cbc8442ecf6c717d09de7b358d77531",
+    "url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/quora.zip"
+  },
+  "scifact": {
+    "bytes": 2816079,
+    "md5": "5f7d1de60b170fc8027bb7898e2efca1",
+    "md5_matches_beir_readme": true,
+    "sha256": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165",
+    "url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip"
+  }
+}
