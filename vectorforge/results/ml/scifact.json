@@ -1,0 +1,438 @@
+{
+  "experiment": "scifact-finetune",
+  "smoke": false,
+  "protocol": "SciFact retrieval experiment: BM25 vs pretrained vs fine-tuned MiniLM.\n\nProtocol\n  1. Split the BEIR SciFact *train* queries 85/15 into train and validation\n     with a fixed seed. The 300 BEIR *test* queries are held out.\n  2. Mine hard negatives with BM25 for training queries only.\n  3. Fine-tune on the training split; after each epoch evaluate on the\n     validation split and keep the epoch with the best nDCG@10.\n  4. Evaluate BM25, the pretrained model and each selected checkpoint once on\n     the test split, with paired bootstrap confidence intervals.",
+  "data": {
+    "dataset": "BEIR SciFact",
+    "archive": {
+      "bytes": 2816079,
+      "md5": "5f7d1de60b170fc8027bb7898e2efca1",
+      "md5_matches_beir_readme": true,
+      "sha256": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165",
+      "url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip"
+    },
+    "corpus_docs": 5183,
+    "doc_text": "title + ' ' + text",
+    "split_seed": 2027,
+    "val_fraction": 0.15,
+    "train_queries": 688,
+    "val_queries": 121,
+    "test_queries": 300,
+    "train_pairs": 789,
+    "query_id_digests": {
+      "train": "6ec34afe3af6067f",
+      "val": "daf51c563c56f1a3",
+      "test": "26cc483d5ed08c95"
+    }
+  },
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD",
+    "torch": "2.14.1+cpu",
+    "torch_threads": 6,
+    "sentence_transformers": "6.1.0",
+    "transformers": "5.20.1"
+  },
+  "metrics": {
+    "bm25": {
+      "MRR@10": 0.6300198412698413,
+      "P@1": 0.5433333333333333,
+      "Recall@1": 0.5275,
+      "Recall@10": 0.7784444444444444,
+      "Recall@100": 0.8858888888888888,
+      "Recall@5": 0.7209444444444444,
+      "nDCG@1": 0.5433333333333333,
+      "nDCG@10": 0.6608270490771315,
+      "nDCG@100": 0.6864106897454879,
+      "nDCG@5": 0.6410644860153127,
+      "queries": 300.0
+    },
+    "pretrained": {
+      "MRR@10": 0.6047248677248678,
+      "P@1": 0.5033333333333333,
+      "Recall@1": 0.4823333333333333,
+      "Recall@10": 0.7833333333333333,
+      "Recall@100": 0.925,
+      "Recall@5": 0.7379444444444444,
+      "nDCG@1": 0.5033333333333333,
+      "nDCG@10": 0.6450816521455774,
+      "nDCG@100": 0.6766476669524601,
+      "nDCG@5": 0.6292831434933512,
+      "queries": 300.0
+    },
+    "hardneg": {
+      "MRR@10": 0.6519960317460315,
+      "P@1": 0.55,
+      "Recall@1": 0.5306666666666666,
+      "Recall@10": 0.86,
+      "Recall@100": 0.9533333333333334,
+      "Recall@5": 0.7757777777777778,
+      "nDCG@1": 0.55,
+      "nDCG@10": 0.6993675988556919,
+      "nDCG@100": 0.7196398032985581,
+      "nDCG@5": 0.6691010751966414,
+      "queries": 300.0
+    },
+    "inbatch": {
+      "MRR@10": 0.6369682539682537,
+      "P@1": 0.5333333333333333,
+      "Recall@1": 0.5145555555555555,
+      "Recall@10": 0.8464444444444443,
+      "Recall@100": 0.9533333333333334,
+      "Recall@5": 0.7652222222222222,
+      "nDCG@1": 0.5333333333333333,
+      "nDCG@10": 0.6830495356134415,
+      "nDCG@100": 0.7070062208044726,
+      "nDCG@5": 0.6543025799207628,
+      "queries": 300.0
+    }
+  },
+  "validation": {
+    "bm25": {
+      "MRR@10": 0.6170438147710875,
+      "P@1": 0.5619834710743802,
+      "Recall@1": 0.5482093663911846,
+      "Recall@10": 0.7396694214876033,
+      "Recall@100": 0.871900826446281,
+      "Recall@5": 0.6818181818181818,
+      "nDCG@1": 0.5619834710743802,
+      "nDCG@10": 0.6418303320749341,
+      "nDCG@100": 0.6674741338315905,
+      "nDCG@5": 0.6224187701997442,
+      "queries": 121.0
+    },
+    "pretrained": {
+      "MRR@10": 0.6082185491276402,
+      "P@1": 0.512396694214876,
+      "Recall@1": 0.5,
+      "Recall@10": 0.7644628099173554,
+      "Recall@100": 0.9256198347107438,
+      "Recall@5": 0.7369146005509641,
+      "nDCG@1": 0.512396694214876,
+      "nDCG@10": 0.6443638534782137,
+      "nDCG@100": 0.6782443119541474,
+      "nDCG@5": 0.634606788810063,
+      "queries": 121.0
+    }
+  },
+  "comparisons": {
+    "pretrained_vs_bm25": {
+      "metric": "nDCG@10",
+      "mean_diff": -0.015745396931554467,
+      "ci95": [
+        -0.05492492315048663,
+        0.023709505522917514
+      ],
+      "p_diff_le_0": 0.7801,
+      "queries": 300,
+      "improved": 67,
+      "worsened": 73,
+      "unchanged": 160
+    },
+    "hardneg_vs_pretrained": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.05428594671011448,
+      "ci95": [
+        0.037339237874556494,
+        0.07286367854789272
+      ],
+      "p_diff_le_0": 0.0,
+      "queries": 300,
+      "improved": 61,
+      "worsened": 23,
+      "unchanged": 216
+    },
+    "inbatch_vs_pretrained": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.037967883467864116,
+      "ci95": [
+        0.022117734037913797,
+        0.055024155527607393
+      ],
+      "p_diff_le_0": 0.0,
+      "queries": 300,
+      "improved": 55,
+      "worsened": 27,
+      "unchanged": 218
+    },
+    "hardneg_vs_inbatch": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.01631806324225037,
+      "ci95": [
+        0.005339371868143576,
+        0.02786062990674796
+      ],
+      "p_diff_le_0": 0.0015,
+      "queries": 300,
+      "improved": 40,
+      "worsened": 26,
+      "unchanged": 234
+    }
+  },
+  "latency_ms": {
+    "pretrained": {
+      "n": 300,
+      "p50": 8.289249992230907,
+      "p95": 10.056570020969957,
+      "p99": 11.172973013017325,
+      "mean": 8.419418334572887
+    },
+    "hardneg": {
+      "n": 300,
+      "p50": 10.625150025589392,
+      "p95": 15.94871001725551,
+      "p99": 23.76642298942896,
+      "mean": 11.637349334196188
+    },
+    "inbatch": {
+      "n": 300,
+      "p50": 9.3180000258144,
+      "p95": 14.077759953215718,
+      "p99": 18.72179900179612,
+      "mean": 10.203891000710428
+    }
+  },
+  "artifacts": {
+    "pretrained": {
+      "model_id": "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4",
+      "bytes": 91578415,
+      "export": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\pretrained\\export"
+    },
+    "hardneg": {
+      "selected_epoch": 3,
+      "path": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\runs\\hardneg\\best",
+      "bytes": 91589079,
+      "export": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\finetuned-hardneg\\export"
+    },
+    "inbatch": {
+      "selected_epoch": 3,
+      "path": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\runs\\inbatch\\best",
+      "bytes": 91589079
+    }
+  },
+  "training": {
+    "hardneg": {
+      "config": {
+        "name": "hardneg",
+        "base_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "epochs": 3,
+        "batch_size": 32,
+        "lr": 2e-05,
+        "warmup_ratio": 0.1,
+        "weight_decay": 0.01,
+        "scale": 20.0,
+        "max_seq_length": 256,
+        "hard_negatives": true,
+        "negative_ranks": [
+          3,
+          30
+        ],
+        "grad_clip": 1.0,
+        "seed": 13
+      },
+      "history": [
+        {
+          "epoch": 0,
+          "steps": 0,
+          "mean_loss": null,
+          "train_seconds": 0.0,
+          "validation": {
+            "MRR@10": 0.6082185491276402,
+            "P@1": 0.512396694214876,
+            "Recall@1": 0.5,
+            "Recall@10": 0.7644628099173554,
+            "Recall@100": 0.9256198347107438,
+            "Recall@5": 0.7369146005509641,
+            "nDCG@1": 0.512396694214876,
+            "nDCG@10": 0.6443638534782137,
+            "nDCG@100": 0.6782443119541474,
+            "nDCG@5": 0.634606788810063,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 1,
+          "steps": 25,
+          "mean_loss": 0.5346160197257995,
+          "train_seconds": 280.76112739997916,
+          "validation": {
+            "MRR@10": 0.6440902531811624,
+            "P@1": 0.5454545454545454,
+            "Recall@1": 0.5330578512396694,
+            "Recall@10": 0.8388429752066116,
+            "Recall@100": 0.9628099173553719,
+            "Recall@5": 0.7644628099173554,
+            "nDCG@1": 0.5454545454545454,
+            "nDCG@10": 0.6878182163178292,
+            "nDCG@100": 0.713672307136682,
+            "nDCG@5": 0.6629137173932008,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 2,
+          "steps": 25,
+          "mean_loss": 0.3230231040716171,
+          "train_seconds": 274.99885550001636,
+          "validation": {
+            "MRR@10": 0.6530499803227077,
+            "P@1": 0.5537190082644629,
+            "Recall@1": 0.5413223140495868,
+            "Recall@10": 0.8305785123966942,
+            "Recall@100": 0.9545454545454546,
+            "Recall@5": 0.7768595041322314,
+            "nDCG@1": 0.5537190082644629,
+            "nDCG@10": 0.6932375347617171,
+            "nDCG@100": 0.7224469455904012,
+            "nDCG@5": 0.6749367645795463,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 3,
+          "steps": 25,
+          "mean_loss": 0.2583817142248154,
+          "train_seconds": 279.4983221000293,
+          "validation": {
+            "MRR@10": 0.6546569592024136,
+            "P@1": 0.5537190082644629,
+            "Recall@1": 0.5413223140495868,
+            "Recall@10": 0.8347107438016529,
+            "Recall@100": 0.9545454545454546,
+            "Recall@5": 0.7768595041322314,
+            "nDCG@1": 0.5537190082644629,
+            "nDCG@10": 0.6958885051716076,
+            "nDCG@100": 0.7244939781764859,
+            "nDCG@5": 0.6765509716735422,
+            "queries": 121.0
+          },
+          "selected": true
+        }
+      ],
+      "best_epoch": 3,
+      "best_path": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\runs\\hardneg\\best",
+      "examples_per_epoch": 789,
+      "queries_with_negatives": 688,
+      "wall_seconds": 1215.6452092999825
+    },
+    "inbatch": {
+      "config": {
+        "name": "inbatch",
+        "base_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "epochs": 3,
+        "batch_size": 32,
+        "lr": 2e-05,
+        "warmup_ratio": 0.1,
+        "weight_decay": 0.01,
+        "scale": 20.0,
+        "max_seq_length": 256,
+        "hard_negatives": false,
+        "negative_ranks": [
+          3,
+          30
+        ],
+        "grad_clip": 1.0,
+        "seed": 13
+      },
+      "history": [
+        {
+          "epoch": 0,
+          "steps": 0,
+          "mean_loss": null,
+          "train_seconds": 0.0,
+          "validation": {
+            "MRR@10": 0.6082185491276402,
+            "P@1": 0.512396694214876,
+            "Recall@1": 0.5,
+            "Recall@10": 0.7644628099173554,
+            "Recall@100": 0.9256198347107438,
+            "Recall@5": 0.7369146005509641,
+            "nDCG@1": 0.512396694214876,
+            "nDCG@10": 0.6443638534782137,
+            "nDCG@100": 0.6782443119541474,
+            "nDCG@5": 0.634606788810063,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 1,
+          "steps": 25,
+          "mean_loss": 0.26486936688423157,
+          "train_seconds": 180.63320340000791,
+          "validation": {
+            "MRR@10": 0.6351764397218943,
+            "P@1": 0.5371900826446281,
+            "Recall@1": 0.5247933884297521,
+            "Recall@10": 0.8223140495867769,
+            "Recall@100": 0.9545454545454546,
+            "Recall@5": 0.7369146005509641,
+            "nDCG@1": 0.5371900826446281,
+            "nDCG@10": 0.67764782575523,
+            "nDCG@100": 0.7047022605142708,
+            "nDCG@5": 0.6497227842833718,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 2,
+          "steps": 25,
+          "mean_loss": 0.1572653940320015,
+          "train_seconds": 176.0246216999949,
+          "validation": {
+            "MRR@10": 0.6488619965892694,
+            "P@1": 0.5537190082644629,
+            "Recall@1": 0.5413223140495868,
+            "Recall@10": 0.8305785123966942,
+            "Recall@100": 0.9628099173553719,
+            "Recall@5": 0.7534435261707988,
+            "nDCG@1": 0.5537190082644629,
+            "nDCG@10": 0.6893485803061047,
+            "nDCG@100": 0.7187936640568682,
+            "nDCG@5": 0.6636526063485965,
+            "queries": 121.0
+          },
+          "selected": false
+        },
+        {
+          "epoch": 3,
+          "steps": 25,
+          "mean_loss": 0.11081517651677132,
+          "train_seconds": 166.56690569996135,
+          "validation": {
+            "MRR@10": 0.6548766889675981,
+            "P@1": 0.5619834710743802,
+            "Recall@1": 0.5495867768595041,
+            "Recall@10": 0.8471074380165289,
+            "Recall@100": 0.9628099173553719,
+            "Recall@5": 0.7493112947658401,
+            "nDCG@1": 0.5619834710743802,
+            "nDCG@10": 0.6975095186145915,
+            "nDCG@100": 0.7228961234293281,
+            "nDCG@5": 0.6645768122637762,
+            "queries": 121.0
+          },
+          "selected": true
+        }
+      ],
+      "best_epoch": 3,
+      "best_path": "C:\\Users\\shabab\\Documents\\MarketPrediction\\byodb-market-intelligence\\byodb\\vectorforge\\ml\\artifacts\\scifact\\runs\\inbatch\\best",
+      "examples_per_epoch": 789,
+      "queries_with_negatives": 0,
+      "wall_seconds": 964.1259568000096
+    }
+  },
+  "bm25": {
+    "k1": 0.9,
+    "b": 0.4,
+    "stemming": false,
+    "index_seconds": 0.5922189999837428
+  },
+  "pretrained_corpus_encode_seconds": 121.33859489997849,
+  "wall_seconds": 2612.180469751358
+}

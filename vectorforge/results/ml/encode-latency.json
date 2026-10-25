@@ -1,0 +1,36 @@
+{
+  "methodology": "Single-query encode latency of several models, measured interleaved.\n\n  python -m vfml.encode_latency\n\nscifact.py measures each model's latency right after its own training, so\nthose numbers are taken minutes apart under whatever else the machine was\ndoing. This script loads every model first and alternates between them on the\nsame query texts, round by round, so drift affects all models equally. Only\nquery texts are read (no labels).",
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cpu",
+    "torch_threads": 6
+  },
+  "queries": 100,
+  "rounds": 5,
+  "batch_size": 1,
+  "mean_query_chars": 91.18,
+  "latency_ms": {
+    "pretrained": {
+      "n": 500,
+      "mean": 12.162853398709558,
+      "p50": 11.419899965403602,
+      "p95": 14.634055044734847,
+      "p99": 16.729494991013777
+    },
+    "finetuned-hardneg": {
+      "n": 500,
+      "mean": 12.411492800107226,
+      "p50": 11.900649988092482,
+      "p95": 16.614304966060445,
+      "p99": 22.090002016047944
+    },
+    "finetuned-inbatch": {
+      "n": 500,
+      "mean": 12.774515199591406,
+      "p50": 11.624199978541583,
+      "p95": 17.175974970450614,
+      "p99": 26.015377013827667
+    }
+  }
+}

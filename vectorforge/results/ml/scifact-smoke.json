@@ -1,0 +1,384 @@
+{
+  "experiment": "scifact-finetune",
+  "smoke": true,
+  "protocol": "SciFact retrieval experiment: BM25 vs pretrained vs fine-tuned MiniLM.\n\nProtocol\n  1. Split the BEIR SciFact *train* queries 85/15 into train and validation\n     with a fixed seed. The 300 BEIR *test* queries are held out.\n  2. Mine hard negatives with BM25 for training queries only.\n  3. Fine-tune on the training split; after each epoch evaluate on the\n     validation split and keep the epoch with the best nDCG@10.\n  4. Evaluate BM25, the pretrained model and each selected checkpoint once on\n     the test split, with paired bootstrap confidence intervals.",
+  "data": {
+    "dataset": "BEIR SciFact",
+    "archive": {
+      "bytes": 2816079,
+      "md5": "5f7d1de60b170fc8027bb7898e2efca1",
+      "md5_matches_beir_readme": true,
+      "sha256": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165",
+      "url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip"
+    },
+    "corpus_docs": 364,
+    "doc_text": "title + ' ' + text",
+    "split_seed": 2027,
+    "val_fraction": 0.15,
+    "train_queries": 48,
+    "val_queries": 16,
+    "test_queries": 16,
+    "train_pairs": 57,
+    "query_id_digests": {
+      "train": "de1d143cebe8f131",
+      "val": "fc11d8996ee9d3a5",
+      "test": "68e79e1a0262e5c1"
+    }
+  },
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD",
+    "torch": "2.14.1+cpu",
+    "torch_threads": 6,
+    "sentence_transformers": "6.1.0",
+    "transformers": "5.20.1"
+  },
+  "metrics": {
+    "bm25": {
+      "MRR@10": 0.8125,
+      "P@1": 0.8125,
+      "Recall@1": 0.7395833333333333,
+      "Recall@10": 0.8125,
+      "Recall@100": 0.9375,
+      "Recall@5": 0.8125,
+      "nDCG@1": 0.8125,
+      "nDCG@10": 0.8074825493217617,
+      "nDCG@100": 0.8374951648859736,
+      "nDCG@5": 0.8074825493217617,
+      "queries": 16.0
+    },
+    "pretrained": {
+      "MRR@10": 0.8854166666666666,
+      "P@1": 0.875,
+      "Recall@1": 0.8020833333333333,
+      "Recall@10": 0.9375,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.875,
+      "nDCG@10": 0.8922454985160131,
+      "nDCG@100": 0.9091353831677207,
+      "nDCG@5": 0.8699825493217617,
+      "queries": 16.0
+    },
+    "hardneg": {
+      "MRR@10": 0.8854166666666666,
+      "P@1": 0.875,
+      "Recall@1": 0.8020833333333333,
+      "Recall@10": 0.9375,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.875,
+      "nDCG@10": 0.8922454985160131,
+      "nDCG@100": 0.9091353831677207,
+      "nDCG@5": 0.8699825493217617,
+      "queries": 16.0
+    },
+    "hardneg_last_epoch_diagnostic": {
+      "MRR@10": 0.892361111111111,
+      "P@1": 0.875,
+      "Recall@1": 0.8020833333333333,
+      "Recall@10": 1.0,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.875,
+      "nDCG@10": 0.9160773239232503,
+      "nDCG@100": 0.9160773239232503,
+      "nDCG@5": 0.875,
+      "queries": 16.0
+    },
+    "inbatch": {
+      "MRR@10": 0.8854166666666666,
+      "P@1": 0.875,
+      "Recall@1": 0.8020833333333333,
+      "Recall@10": 0.9375,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.875,
+      "nDCG@10": 0.8922454985160131,
+      "nDCG@100": 0.9091353831677207,
+      "nDCG@5": 0.8699825493217617,
+      "queries": 16.0
+    },
+    "inbatch_last_epoch_diagnostic": {
+      "MRR@10": 0.8932291666666666,
+      "P@1": 0.875,
+      "Recall@1": 0.8020833333333333,
+      "Recall@10": 1.0,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.875,
+      "nDCG@10": 0.9119620533151211,
+      "nDCG@100": 0.9119620533151211,
+      "nDCG@5": 0.8699825493217617,
+      "queries": 16.0
+    }
+  },
+  "validation": {
+    "bm25": {
+      "MRR@10": 0.84375,
+      "P@1": 0.75,
+      "Recall@1": 0.7083333333333333,
+      "Recall@10": 0.9375,
+      "Recall@100": 1.0,
+      "Recall@5": 0.9375,
+      "nDCG@1": 0.75,
+      "nDCG@10": 0.8662660777627214,
+      "nDCG@100": 0.8767628764475365,
+      "nDCG@5": 0.8662660777627214,
+      "queries": 16.0
+    },
+    "pretrained": {
+      "MRR@10": 0.725,
+      "P@1": 0.5625,
+      "Recall@1": 0.5625,
+      "Recall@10": 0.9375,
+      "Recall@100": 1.0,
+      "Recall@5": 0.875,
+      "nDCG@1": 0.5625,
+      "nDCG@10": 0.7841007788175943,
+      "nDCG@100": 0.7949611127470594,
+      "nDCG@5": 0.7660342271727263,
+      "queries": 16.0
+    }
+  },
+  "comparisons": {
+    "pretrained_vs_bm25": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.08476294919425138,
+      "ci95": [
+        -0.125,
+        0.2945258983885028
+      ],
+      "p_diff_le_0": 0.2407,
+      "queries": 16,
+      "improved": 3,
+      "worsened": 1,
+      "unchanged": 12
+    },
+    "hardneg_vs_pretrained": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_diff_le_0": 1.0,
+      "queries": 16,
+      "improved": 0,
+      "worsened": 0,
+      "unchanged": 16
+    },
+    "inbatch_vs_pretrained": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_diff_le_0": 1.0,
+      "queries": 16,
+      "improved": 0,
+      "worsened": 0,
+      "unchanged": 16
+    },
+    "hardneg_vs_inbatch": {
+      "metric": "nDCG@10",
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_diff_le_0": 1.0,
+      "queries": 16,
+      "improved": 0,
+      "worsened": 0,
+      "unchanged": 16
+    }
+  },
+  "latency_ms": {
+    "pretrained": {
+      "n": 48,
+      "p50": 7.7706500014755875,
+      "p95": 8.786349996807985,
+      "p99": 9.31908997357823,
+      "mean": 7.799227084130204
+    },
+    "hardneg": {
+      "n": 48,
+      "p50": 7.738250016700476,
+      "p95": 8.771450008498505,
+      "p99": 13.893918997491719,
+      "mean": 8.007902078437231
+    },
+    "inbatch": {
+      "n": 48,
+      "p50": 7.874200004152954,
+      "p95": 9.154369999305345,
+      "p99": 11.189927007071676,
+      "mean": 7.944560419370343
+    }
+  },
+  "artifacts": {
+    "pretrained": {
+      "model_id": "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4",
+      "bytes": 91578415
+    },
+    "hardneg": {
+      "selected_epoch": 0,
+      "path": "C:\\Users\\shabab\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "bytes": 91578415,
+      "note": "no epoch beat the pretrained model on validation; the pretrained weights were selected"
+    },
+    "inbatch": {
+      "selected_epoch": 0,
+      "path": "C:\\Users\\shabab\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "bytes": 91578415,
+      "note": "no epoch beat the pretrained model on validation; the pretrained weights were selected"
+    }
+  },
+  "training": {
+    "hardneg": {
+      "config": {
+        "name": "hardneg",
+        "base_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "epochs": 1,
+        "batch_size": 8,
+        "lr": 2e-05,
+        "warmup_ratio": 0.1,
+        "weight_decay": 0.01,
+        "scale": 20.0,
+        "max_seq_length": 256,
+        "hard_negatives": true,
+        "negative_ranks": [
+          3,
+          30
+        ],
+        "grad_clip": 1.0,
+        "seed": 13
+      },
+      "history": [
+        {
+          "epoch": 0,
+          "steps": 0,
+          "mean_loss": null,
+          "train_seconds": 0.0,
+          "validation": {
+            "MRR@10": 0.725,
+            "P@1": 0.5625,
+            "Recall@1": 0.5625,
+            "Recall@10": 0.9375,
+            "Recall@100": 1.0,
+            "Recall@5": 0.875,
+            "nDCG@1": 0.5625,
+            "nDCG@10": 0.7841007788175943,
+            "nDCG@100": 0.7949611127470594,
+            "nDCG@5": 0.7660342271727263,
+            "queries": 16.0
+          },
+          "selected": true
+        },
+        {
+          "epoch": 1,
+          "steps": 8,
+          "mean_loss": 0.20816033528717526,
+          "train_seconds": 20.504043900000397,
+          "validation": {
+            "MRR@10": 0.725,
+            "P@1": 0.5625,
+            "Recall@1": 0.5625,
+            "Recall@10": 0.9375,
+            "Recall@100": 1.0,
+            "Recall@5": 0.875,
+            "nDCG@1": 0.5625,
+            "nDCG@10": 0.7841007788175943,
+            "nDCG@100": 0.7947252548355265,
+            "nDCG@5": 0.7660342271727263,
+            "queries": 16.0
+          },
+          "selected": false
+        }
+      ],
+      "best_epoch": 0,
+      "best_path": "C:\\Users\\shabab\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "examples_per_epoch": 57,
+      "queries_with_negatives": 48,
+      "wall_seconds": 28.90555470000254
+    },
+    "inbatch": {
+      "config": {
+        "name": "inbatch",
+        "base_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "epochs": 1,
+        "batch_size": 8,
+        "lr": 2e-05,
+        "warmup_ratio": 0.1,
+        "weight_decay": 0.01,
+        "scale": 20.0,
+        "max_seq_length": 256,
+        "hard_negatives": false,
+        "negative_ranks": [
+          3,
+          30
+        ],
+        "grad_clip": 1.0,
+        "seed": 13
+      },
+      "history": [
+        {
+          "epoch": 0,
+          "steps": 0,
+          "mean_loss": null,
+          "train_seconds": 0.0,
+          "validation": {
+            "MRR@10": 0.725,
+            "P@1": 0.5625,
+            "Recall@1": 0.5625,
+            "Recall@10": 0.9375,
+            "Recall@100": 1.0,
+            "Recall@5": 0.875,
+            "nDCG@1": 0.5625,
+            "nDCG@10": 0.7841007788175943,
+            "nDCG@100": 0.7949611127470594,
+            "nDCG@5": 0.7660342271727263,
+            "queries": 16.0
+          },
+          "selected": true
+        },
+        {
+          "epoch": 1,
+          "steps": 8,
+          "mean_loss": 0.08086489420384169,
+          "train_seconds": 10.809959499980323,
+          "validation": {
+            "MRR@10": 0.7145833333333332,
+            "P@1": 0.5625,
+            "Recall@1": 0.5625,
+            "Recall@10": 0.9375,
+            "Recall@100": 1.0,
+            "Recall@5": 0.875,
+            "nDCG@1": 0.5625,
+            "nDCG@10": 0.7759176692193782,
+            "nDCG@100": 0.786829133597381,
+            "nDCG@5": 0.7578511175745102,
+            "queries": 16.0
+          },
+          "selected": false
+        }
+      ],
+      "best_epoch": 0,
+      "best_path": "C:\\Users\\shabab\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "examples_per_epoch": 57,
+      "queries_with_negatives": 0,
+      "wall_seconds": 19.31610290001845
+    }
+  },
+  "bm25": {
+    "k1": 0.9,
+    "b": 0.4,
+    "stemming": false,
+    "index_seconds": 0.04895770002622157
+  },
+  "pretrained_corpus_encode_seconds": 8.261061700002756,
+  "wall_seconds": 99.71279263496399
+}
