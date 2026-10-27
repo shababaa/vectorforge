@@ -1,0 +1,72 @@
+{
+  "tool": "vfbench",
+  "suite": "storage",
+  "quick": false,
+  "environment": {
+    "go_version": "go1.26.0",
+    "os": "windows",
+    "arch": "amd64",
+    "cpu": "AMD Ryzen 5 5600 6-Core Processor",
+    "num_cpu": 12,
+    "gomaxprocs": 12,
+    "git_commit": "b5ebf7d",
+    "git_dirty": true,
+    "timer": "QueryPerformanceCounter"
+  },
+  "started_at": "2026-10-18T01:29:24.4433058Z",
+  "wall_seconds": 75.8663457,
+  "methodology": [
+    "Latency: each query is timed individually with a QueryPerformanceCounter-based clock (100 ns resolution; Go's monotonic clock on Windows advances in ~0.5 ms steps) after 50 warm-up queries; percentiles are nearest-rank.",
+    "Scope: index search only (scoring + top-k selection) in memory. Query embedding, HTTP and chunk-text fetches are excluded; the API reports those separately.",
+    "QPS (serial) = 1 / mean single-goroutine latency. Concurrent QPS = queries completed / wall time with W goroutines sharing one read-only index.",
+    "Recall@k: |IVF top-k ∩ exact top-k| / k averaged over queries, against exact search on the same vectors (ANN recall, not semantic relevance).",
+    "Build time: k-means training (sample of at most 256 points per list, \u003c=25 Lloyd iterations, seed 42) plus assignment of every vector.",
+    "Memory: estimate = vector payload + IDs + map overhead; measured = live heap delta after two GCs around the build.",
+    "Synthetic data: Gaussian blobs around 1000 random unit centres (expected cosine to centre ~0.71) or isotropic unit vectors; queries are fresh draws from the same distribution, never dataset points."
+  ],
+  "storage": {
+    "dataset": {
+      "name": "clustered-100k-384d",
+      "kind": "clustered",
+      "n": 100000,
+      "dim": 384,
+      "queries": 1000,
+      "clusters": 1000,
+      "spread": 1,
+      "seed": 7
+    },
+    "vectors_per_transaction": 1000,
+    "bulk_insert_ms": 36056.1503,
+    "bulk_insert_vectors_per_sec": 2773.451940042529,
+    "single_chunk_upsert_latency": {
+      "n": 50,
+      "mean_us": 1965.366,
+      "p50_us": 1921.2,
+      "p95_us": 2354.1,
+      "p99_us": 2758.3,
+      "max_us": 2758.3
+    },
+    "file_bytes": 347525120,
+    "raw_vector_bytes": 153600000,
+    "file_bytes_per_vector": 3473.514442778611,
+    "page_count": 84845,
+    "free_pages": 8,
+    "table_rows": {
+      "vf_chunks": 100050,
+      "vf_documents": 1050,
+      "vf_ingest_runs": 0,
+      "vf_ivf_centroids": 632,
+      "vf_ivf_postings": 100050,
+      "vf_meta": 4,
+      "vf_vectors": 200100
+    },
+    "ivf_nlist": 316,
+    "ivf_train_ms": 10810.7257,
+    "ivf_persist_ms": 24298.6587,
+    "cold_open_ms": 8.345,
+    "cold_load_vectors_ms": 1544.6968,
+    "cold_load_ivf_ms": 204.6051,
+    "reloaded_ivf_results_identical": true,
+    "reload_check_queries": 200
+  }
+}

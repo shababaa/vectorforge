@@ -1,0 +1,142 @@
+{
+  "started_at": "2026-10-18T02:35:19Z",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "corpus_files": [
+    "btree.go",
+    "pager.go",
+    "kv.go",
+    "table.go",
+    "codec.go",
+    "docs/DURABILITY.md",
+    "docs/ARCHITECTURE.md"
+  ],
+  "queries": [
+    "how is a torn meta page detected after a crash",
+    "split a B+tree node when it no longer fits in a page",
+    "encode a row into a sortable key"
+  ],
+  "steps": [
+    {
+      "step": "start on an empty database",
+      "ok": true,
+      "startup_ms": 873,
+      "model": "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4"
+    },
+    {
+      "step": "ingest corpus",
+      "ok": true,
+      "added": 7,
+      "chunks": 244,
+      "embed_ms": 6581,
+      "ivf_trained": true
+    },
+    {
+      "step": "IVF trained during ingest",
+      "ok": true,
+      "nlist": 16,
+      "vectors": 244
+    },
+    {
+      "step": "searches return results",
+      "ok": true,
+      "top_exact_hits": {
+        "how is a torn meta page detected after a crash": "pager.go",
+        "split a B+tree node when it no longer fits in a page": "btree.go",
+        "encode a row into a sortable key": "kv.go"
+      }
+    },
+    {
+      "step": "re-ingest is a no-op",
+      "ok": true,
+      "unchanged": 7,
+      "chunks_embedded": 0
+    },
+    {
+      "step": "restart after kill: IVF loaded, not retrained",
+      "ok": true,
+      "startup_ms": 526,
+      "load_ms": 9,
+      "vectors": 244
+    },
+    {
+      "step": "identical results after restart (IDs, ranks, scores)",
+      "ok": true
+    },
+    {
+      "step": "consistency after restart",
+      "ok": true
+    },
+    {
+      "step": "re-ingest after file changes",
+      "ok": true,
+      "added": 1,
+      "updated": 1,
+      "deleted": 1,
+      "unchanged": 5
+    },
+    {
+      "step": "new file is searchable",
+      "ok": true,
+      "top": [
+        "notes/compaction.md",
+        "pager.go",
+        "kv.go"
+      ]
+    },
+    {
+      "step": "deleted file no longer listed or returned",
+      "ok": true
+    },
+    {
+      "step": "modified file re-embedded with fresh vector IDs",
+      "ok": true,
+      "old_chunks": 12,
+      "new_chunks": 12
+    },
+    {
+      "step": "uploaded document is searchable",
+      "ok": true,
+      "top": [
+        "e2e/raft-notes.md",
+        "btree.go",
+        "btree.go"
+      ]
+    },
+    {
+      "step": "uploaded document via IVF (informational)",
+      "ok": true,
+      "top": [
+        "e2e/raft-notes.md",
+        "btree.go",
+        "btree.go"
+      ],
+      "note": "off-distribution inserts can land in lists the query does not probe"
+    },
+    {
+      "step": "API delete removes the document from results",
+      "ok": true,
+      "top": [
+        "btree.go",
+        "btree.go",
+        "btree.go"
+      ]
+    },
+    {
+      "step": "consistency after mutations",
+      "ok": true
+    },
+    {
+      "step": "mutations persisted across a second kill/restart",
+      "ok": true
+    },
+    {
+      "step": "final consistency",
+      "ok": true,
+      "documents": 7,
+      "vectors": 220,
+      "postings": 220
+    }
+  ],
+  "passed": true,
+  "finished_at": "2026-10-18T02:35:29Z"
+}

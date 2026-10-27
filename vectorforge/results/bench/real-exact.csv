@@ -1,0 +1,4 @@
+dataset,n,dim,queries,k,mean_us,p50_us,p95_us,p99_us,qps,memory_estimate_bytes,heap_measured_bytes
+scifact-pretrained,5183,384,300,10,836.5,805.9,1100.4,1313.7,1195.5,9349592,9300368
+scifact-finetuned-hardneg,5183,384,300,10,734.6,707.8,971.2,1090.1,1361.3,9349592,9290160
+quora-pretrained,522931,384,1000,10,88829.1,87202.9,98574.5,133315.1,11.3,1012345848,1010345328

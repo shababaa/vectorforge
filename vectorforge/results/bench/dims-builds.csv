@@ -1,0 +1,4 @@
+dataset,n,dim,nlist,build_ms,iterations,converged,objective,sample,imbalance,min_list,max_list,memory_estimate_bytes,heap_measured_bytes
+clustered-100k-128d,100000,128,316,6916.9,22,true,0.4719,80896,1.079,88,555,62635392,61233536
+clustered-100k-384d,100000,384,316,11251.9,9,true,0.4339,80896,1.110,86,619,178569984,176972144
+clustered-100k-768d,100000,768,316,19856.4,8,true,0.4173,80896,1.123,81,676,357152512,355533552

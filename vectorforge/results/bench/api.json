@@ -1,0 +1,259 @@
+{
+  "label": "run 1: embedding service with default torch threads (6)",
+  "measured_at": "2026-10-18T02:39:25Z",
+  "methodology": "End-to-end search latency through the HTTP API.\n\n  python vectorforge/scripts/apibench.py --url http://127.0.0.1:8080\n\nSends the 44 evaluation queries (vectorforge/eval/codesearch.json) to\nPOST /api/v1/search for each strategy, serially and with concurrent clients,\nand records client wall time next to the server's own breakdown (embed,\nindex search, chunk fetch). Each worker keeps one persistent HTTP connection.\nRun it on an otherwise idle machine; the embedding service runs on the same\nCPU as the database.",
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu_count": 12
+  },
+  "server": {
+    "health": {
+      "dimension": 384,
+      "documents": 357,
+      "embedder": "ok",
+      "ivf_trained": true,
+      "model_id": "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4",
+      "mutations": {
+        "enabled": true,
+        "token_required": false
+      },
+      "read_only": false,
+      "status": "ok",
+      "vectors": 7478
+    },
+    "vectors": 7478,
+    "documents": 357,
+    "ivf": {
+      "trained": true,
+      "default_nprobe": 8,
+      "vectors_since_train": 0
+    }
+  },
+  "queries": 44,
+  "repeats": 5,
+  "serial": [
+    {
+      "strategy": "exact",
+      "nprobe": null,
+      "client_wall_ms": {
+        "n": 220,
+        "mean": 13.448004545485178,
+        "p50": 13.381299970205873,
+        "p95": 15.169899968896061,
+        "p99": 15.842100023292005,
+        "max": 16.222800011746585
+      },
+      "server_ms": {
+        "embed_ms": {
+          "n": 220,
+          "mean": 10.26467,
+          "p50": 10.2171,
+          "p95": 11.5916,
+          "p99": 12.223,
+          "max": 12.5117
+        },
+        "search_ms": {
+          "n": 220,
+          "mean": 1.3281036363636363,
+          "p50": 1.3332,
+          "p95": 1.6194,
+          "p99": 1.6727,
+          "max": 2.0363
+        },
+        "fetch_ms": {
+          "n": 220,
+          "mean": 1.3255700000000001,
+          "p50": 1.2879,
+          "p95": 1.9065,
+          "p99": 2.0812,
+          "max": 2.2615
+        },
+        "total_ms": {
+          "n": 220,
+          "mean": 12.924401363636363,
+          "p50": 12.8482,
+          "p95": 14.4526,
+          "p99": 15.2595,
+          "max": 15.6807
+        }
+      }
+    },
+    {
+      "strategy": "ivf",
+      "nprobe": 8,
+      "client_wall_ms": {
+        "n": 220,
+        "mean": 12.603839545574209,
+        "p50": 12.0691999909468,
+        "p95": 14.480899961199611,
+        "p99": 22.918500006198883,
+        "max": 74.56730003468692
+      },
+      "server_ms": {
+        "embed_ms": {
+          "n": 220,
+          "mean": 10.631616818181818,
+          "p50": 10.1141,
+          "p95": 12.2814,
+          "p99": 20.2266,
+          "max": 72.4604
+        },
+        "search_ms": {
+          "n": 220,
+          "mean": 0.14111227272727273,
+          "p50": 0.1361,
+          "p95": 0.2116,
+          "p99": 0.2483,
+          "max": 0.3247
+        },
+        "fetch_ms": {
+          "n": 220,
+          "mean": 1.3065445454545455,
+          "p50": 1.268,
+          "p95": 1.9083,
+          "p99": 2.3226,
+          "max": 2.4287
+        },
+        "total_ms": {
+          "n": 220,
+          "mean": 12.085087272727273,
+          "p50": 11.5452,
+          "p95": 13.8933,
+          "p99": 22.3275,
+          "max": 74.0143
+        }
+      }
+    }
+  ],
+  "concurrent": [
+    {
+      "strategy": "exact",
+      "nprobe": null,
+      "workers": 1,
+      "requests": 440,
+      "errors": 0,
+      "qps": 71.11256037105704,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 14.020712272824973,
+        "p50": 13.3983000414446,
+        "p95": 15.892299998085946,
+        "p99": 19.42369999596849,
+        "max": 98.95989997312427
+      }
+    },
+    {
+      "strategy": "exact",
+      "nprobe": null,
+      "workers": 2,
+      "requests": 440,
+      "errors": 0,
+      "qps": 77.75847345168543,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 25.511880453929983,
+        "p50": 24.814500007778406,
+        "p95": 31.880200025625527,
+        "p99": 38.25689997756854,
+        "max": 45.07209995063022
+      }
+    },
+    {
+      "strategy": "exact",
+      "nprobe": null,
+      "workers": 4,
+      "requests": 440,
+      "errors": 0,
+      "qps": 53.49568528130808,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 73.94694022937487,
+        "p50": 56.826299987733364,
+        "p95": 104.79949996806681,
+        "p99": 642.9814000148326,
+        "max": 1029.357799969148
+      }
+    },
+    {
+      "strategy": "exact",
+      "nprobe": null,
+      "workers": 8,
+      "requests": 440,
+      "errors": 0,
+      "qps": 39.04994882503596,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 202.67857204717902,
+        "p50": 145.3036000020802,
+        "p95": 483.08660002658144,
+        "p99": 958.1497000181116,
+        "max": 1123.494999948889
+      }
+    },
+    {
+      "strategy": "ivf",
+      "nprobe": 8,
+      "workers": 1,
+      "requests": 440,
+      "errors": 0,
+      "qps": 51.45907228993396,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 19.376477956988808,
+        "p50": 16.85760001419112,
+        "p95": 34.94340000906959,
+        "p99": 50.46020000008866,
+        "max": 75.4558999906294
+      }
+    },
+    {
+      "strategy": "ivf",
+      "nprobe": 8,
+      "workers": 2,
+      "requests": 440,
+      "errors": 0,
+      "qps": 59.489670564761454,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 33.41010318293808,
+        "p50": 28.751400008331984,
+        "p95": 47.51790000591427,
+        "p99": 100.81279999576509,
+        "max": 495.7052000099793
+      }
+    },
+    {
+      "strategy": "ivf",
+      "nprobe": 8,
+      "workers": 4,
+      "requests": 440,
+      "errors": 0,
+      "qps": 59.273547975928764,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 66.88804909115953,
+        "p50": 61.6180999786593,
+        "p95": 90.83739999914542,
+        "p99": 154.5866000233218,
+        "max": 172.7555999532342
+      }
+    },
+    {
+      "strategy": "ivf",
+      "nprobe": 8,
+      "workers": 8,
+      "requests": 440,
+      "errors": 0,
+      "qps": 62.01283806664942,
+      "client_wall_ms": {
+        "n": 440,
+        "mean": 126.53962931825927,
+        "p50": 121.58419995103031,
+        "p95": 148.2823000405915,
+        "p99": 282.8321999986656,
+        "max": 332.9721000045538
+      }
+    }
+  ]
+}
