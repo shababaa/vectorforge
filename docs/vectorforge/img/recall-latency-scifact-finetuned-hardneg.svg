@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" font-family="system-ui,Segoe UI,sans-serif" font-size="12">
+<rect width="720" height="420" fill="#fff"/>
+<text x="64" y="22" font-size="14" font-weight="600">scifact-finetuned-hardneg: recall@10 vs p50 latency</text>
+<line x1="64.0" x2="64.0" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="64.0" y="384" text-anchor="middle" fill="#374151">10</text>
+<line x1="137.2" x2="137.2" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="137.2" y="384" text-anchor="middle" fill="#374151">20</text>
+<line x1="233.8" x2="233.8" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="233.8" y="384" text-anchor="middle" fill="#374151">50</text>
+<line x1="307.0" x2="307.0" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="307.0" y="384" text-anchor="middle" fill="#374151">100</text>
+<line x1="380.2" x2="380.2" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="380.2" y="384" text-anchor="middle" fill="#374151">200</text>
+<line x1="476.8" x2="476.8" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="476.8" y="384" text-anchor="middle" fill="#374151">500</text>
+<line x1="550.0" x2="550.0" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="550.0" y="384" text-anchor="middle" fill="#374151">1k</text>
+<line x1="64" x2="550" y1="359.1" y2="359.1" stroke="#e5e7eb"/>
+<text x="58" y="363.1" text-anchor="end" fill="#374151">0.4</text>
+<line x1="64" x2="550" y1="256.4" y2="256.4" stroke="#e5e7eb"/>
+<text x="58" y="260.4" text-anchor="end" fill="#374151">0.6</text>
+<line x1="64" x2="550" y1="153.8" y2="153.8" stroke="#e5e7eb"/>
+<text x="58" y="157.8" text-anchor="end" fill="#374151">0.8</text>
+<line x1="64" x2="550" y1="51.1" y2="51.1" stroke="#e5e7eb"/>
+<text x="58" y="55.1" text-anchor="end" fill="#374151">1</text>
+<rect x="64" y="36" width="486" height="332" fill="none" stroke="#9ca3af"/>
+<text x="307.0" y="408" text-anchor="middle">p50 latency per query (µs, log scale)</text>
+<text transform="translate(16 202.0) rotate(-90)" text-anchor="middle">recall@10 vs exact</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="176.4,280.7 234.3,202.3 287.6,134.9 366.0,92.5 422.1,63.4 497.0,51.1"/>
+<circle cx="176.4" cy="280.7" r="3" fill="#2563eb"><title>nlist=36: 29, 0.5527</title></circle>
+<circle cx="234.3" cy="202.3" r="3" fill="#2563eb"><title>nlist=36: 50.2, 0.7053</title></circle>
+<circle cx="287.6" cy="134.9" r="3" fill="#2563eb"><title>nlist=36: 83.2, 0.8367</title></circle>
+<circle cx="366.0" cy="92.5" r="3" fill="#2563eb"><title>nlist=36: 174.9, 0.9193</title></circle>
+<circle cx="422.1" cy="63.4" r="3" fill="#2563eb"><title>nlist=36: 297.7, 0.976</title></circle>
+<circle cx="497.0" cy="51.1" r="3" fill="#2563eb"><title>nlist=36: 605.2, 1</title></circle>
+<line x1="562" x2="580" y1="44" y2="44" stroke="#2563eb" stroke-width="2"/>
+<text x="586" y="48">nlist=36</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="165.6,313.4 191.9,236.0 254.1,165.9 294.2,115.9 360.8,80.9 426.0,59.0 491.4,51.3"/>
+<circle cx="165.6" cy="313.4" r="3" fill="#dc2626"><title>nlist=72: 26.2, 0.489</title></circle>
+<circle cx="191.9" cy="236.0" r="3" fill="#dc2626"><title>nlist=72: 33.6, 0.6397</title></circle>
+<circle cx="254.1" cy="165.9" r="3" fill="#dc2626"><title>nlist=72: 60.6, 0.7763</title></circle>
+<circle cx="294.2" cy="115.9" r="3" fill="#dc2626"><title>nlist=72: 88.6, 0.8737</title></circle>
+<circle cx="360.8" cy="80.9" r="3" fill="#dc2626"><title>nlist=72: 166.5, 0.942</title></circle>
+<circle cx="426.0" cy="59.0" r="3" fill="#dc2626"><title>nlist=72: 308.8, 0.9847</title></circle>
+<circle cx="491.4" cy="51.3" r="3" fill="#dc2626"><title>nlist=72: 574.1, 0.9997</title></circle>
+<line x1="562" x2="580" y1="62" y2="62" stroke="#dc2626" stroke-width="2"/>
+<text x="586" y="66">nlist=72</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="147.7,323.8 181.7,251.4 206.0,188.5 259.9,137.7 306.5,97.8 360.7,70.1 423.2,56.1 495.1,51.4"/>
+<circle cx="147.7" cy="323.8" r="3" fill="#16a34a"><title>nlist=144: 22.1, 0.4687</title></circle>
+<circle cx="181.7" cy="251.4" r="3" fill="#16a34a"><title>nlist=144: 30.5, 0.6097</title></circle>
+<circle cx="206.0" cy="188.5" r="3" fill="#16a34a"><title>nlist=144: 38.4, 0.7323</title></circle>
+<circle cx="259.9" cy="137.7" r="3" fill="#16a34a"><title>nlist=144: 64, 0.8313</title></circle>
+<circle cx="306.5" cy="97.8" r="3" fill="#16a34a"><title>nlist=144: 99.5, 0.909</title></circle>
+<circle cx="360.7" cy="70.1" r="3" fill="#16a34a"><title>nlist=144: 166.4, 0.963</title></circle>
+<circle cx="423.2" cy="56.1" r="3" fill="#16a34a"><title>nlist=144: 300.7, 0.9903</title></circle>
+<circle cx="495.1" cy="51.4" r="3" fill="#16a34a"><title>nlist=144: 594.4, 0.9993</title></circle>
+<line x1="562" x2="580" y1="80" y2="80" stroke="#16a34a" stroke-width="2"/>
+<text x="586" y="84">nlist=144</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="217.4,277.6 222.0,205.3 226.6,352.9 254.5,149.1 271.3,113.7 322.6,84.6 373.6,61.4 443.6,54.2 506.9,51.3"/>
+<circle cx="217.4" cy="277.6" r="3" fill="#9333ea"><title>nlist=288: 42.8, 0.5587</title></circle>
+<circle cx="222.0" cy="205.3" r="3" fill="#9333ea"><title>nlist=288: 44.7, 0.6997</title></circle>
+<circle cx="226.6" cy="352.9" r="3" fill="#9333ea"><title>nlist=288: 46.7, 0.412</title></circle>
+<circle cx="254.5" cy="149.1" r="3" fill="#9333ea"><title>nlist=288: 60.8, 0.809</title></circle>
+<circle cx="271.3" cy="113.7" r="3" fill="#9333ea"><title>nlist=288: 71.3, 0.878</title></circle>
+<circle cx="322.6" cy="84.6" r="3" fill="#9333ea"><title>nlist=288: 115.9, 0.9347</title></circle>
+<circle cx="373.6" cy="61.4" r="3" fill="#9333ea"><title>nlist=288: 188, 0.98</title></circle>
+<circle cx="443.6" cy="54.2" r="3" fill="#9333ea"><title>nlist=288: 364.7, 0.994</title></circle>
+<circle cx="506.9" cy="51.3" r="3" fill="#9333ea"><title>nlist=288: 664.5, 0.9997</title></circle>
+<line x1="562" x2="580" y1="98" y2="98" stroke="#9333ea" stroke-width="2"/>
+<text x="586" y="102">nlist=288</text>
+<circle cx="513.5" cy="51.1" r="3" fill="#ea580c"><title>exact: 707.8, 1</title></circle>
+<line x1="562" x2="580" y1="116" y2="116" stroke="#ea580c" stroke-width="2"/>
+<text x="586" y="120">exact</text>
+</svg>

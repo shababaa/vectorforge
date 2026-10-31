@@ -1,6 +1,6 @@
 # byodb: database engine + market intelligence platform
 
-This repository now contains two connected projects:
+This repository now contains three connected projects:
 
 1. **A database engine built from scratch in Go**: copy-on-write B+ trees,
    durable pages, recovery, transactions, relational tables, secondary indexes,
@@ -9,14 +9,38 @@ This repository now contains two connected projects:
    ingestion, indexed time-series queries, point-in-time features, model
    lineage, walk-forward forecasts, evaluation metrics, and auditable LLM
    analysis.
+3. **VectorForge, a semantic search engine and vector database on the same
+   engine**: structure-aware chunking, a local embedding model, exact and
+   IVF-Flat nearest-neighbour search implemented in Go, and an index that is
+   persisted in byodb and survives restarts without retraining.
 
-The combination is the portfolio story: the application does not hide behind
-PostgreSQL or an ORM. Its domain data, features, predictions, and LLM outputs
-are stored on a database whose storage and transaction layers are implemented
-in this repository.
+The combination is the portfolio story: the applications do not hide behind
+PostgreSQL, an ORM or a vector database. Their data, features, predictions,
+LLM outputs, embeddings and ANN index are stored on a database whose storage
+and transaction layers are implemented in this repository.
 
 > This is an educational engineering and research project, not financial
 > advice or a production trading system.
+
+## VectorForge semantic search
+
+```sh
+cd vectorforge/ml && .venv/bin/python -m vfml.service --port 8090   # embedding model
+go run ./cmd/vectorforge -db vectorforge/runtime/demo.db \
+  -sources vectorforge/demo/sources.json -ui vectorforge/web/dist
+python vectorforge/scripts/vfctl.py ingest byodb
+python vectorforge/scripts/vfctl.py search "how are torn commits detected"
+```
+
+Measured on one desktop CPU (details in
+[benchmarks.md](docs/vectorforge/benchmarks.md)): on 523k real MiniLM
+embeddings, IVF reaches recall@10 0.95 at 2.2 ms per query versus 87 ms for
+exact search; the persisted index reloads 53× faster than retraining it; and
+contrastive fine-tuning with hard negatives raised SciFact nDCG@10 from 0.645
+to 0.699 (95 % CI of the gain [+0.037, +0.073]). Setup, safety defaults and
+all documentation are in [vectorforge/README.md](vectorforge/README.md).
+VectorForge uses only its own `vf_*` tables and refuses to open the market
+service's database.
 
 ## Phase 5 full-stack demo
 
@@ -378,3 +402,6 @@ boundary is documented in [DURABILITY.md](docs/DURABILITY.md).
 | `market/llm/ollama` | local structured-output LLM adapter and HTTP contract tests |
 | `market/source/sec` | SEC filing metadata, request policy, and source validation |
 | `cmd/marketdb` | data, prediction, grounded analyst, evaluation, and replay CLI |
+| `vectorforge/` | semantic search: vector math, exact and IVF-Flat indexes, `vf_*` store, chunkers, engine, HTTP API, Python ML, React UI |
+| `cmd/vectorforge` | VectorForge server |
+| `cmd/vfbench` | reproducible exact-vs-IVF benchmark harness |

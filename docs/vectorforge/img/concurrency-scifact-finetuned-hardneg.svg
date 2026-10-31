@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" font-family="system-ui,Segoe UI,sans-serif" font-size="12">
+<rect width="720" height="420" fill="#fff"/>
+<text x="64" y="22" font-size="14" font-weight="600">scifact-finetuned-hardneg: throughput vs goroutines</text>
+<line x1="130.3" x2="130.3" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="130.3" y="384" text-anchor="middle" fill="#374151">2.5</text>
+<line x1="240.7" x2="240.7" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="240.7" y="384" text-anchor="middle" fill="#374151">5</text>
+<line x1="351.2" x2="351.2" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="351.2" y="384" text-anchor="middle" fill="#374151">7.5</text>
+<line x1="461.6" x2="461.6" y1="36" y2="368" stroke="#e5e7eb"/>
+<text x="461.6" y="384" text-anchor="middle" fill="#374151">10</text>
+<line x1="64" x2="550" y1="368.0" y2="368.0" stroke="#e5e7eb"/>
+<text x="58" y="372.0" text-anchor="end" fill="#374151">0</text>
+<line x1="64" x2="550" y1="257.0" y2="257.0" stroke="#e5e7eb"/>
+<text x="58" y="261.0" text-anchor="end" fill="#374151">5000</text>
+<line x1="64" x2="550" y1="146.0" y2="146.0" stroke="#e5e7eb"/>
+<text x="58" y="150.0" text-anchor="end" fill="#374151">10000</text>
+<rect x="64" y="36" width="486" height="332" fill="none" stroke="#9ca3af"/>
+<text x="307.0" y="408" text-anchor="middle">concurrent goroutines</text>
+<text transform="translate(16 202.0) rotate(-90)" text-anchor="middle">queries per second</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="64.0,337.4 108.2,313.1 196.5,272.3 284.9,248.1 373.3,223.4 550.0,208.1"/>
+<circle cx="64.0" cy="337.4" r="3" fill="#2563eb"><title>exact: 1, 1376</title></circle>
+<circle cx="108.2" cy="313.1" r="3" fill="#2563eb"><title>exact: 2, 2473</title></circle>
+<circle cx="196.5" cy="272.3" r="3" fill="#2563eb"><title>exact: 4, 4312</title></circle>
+<circle cx="284.9" cy="248.1" r="3" fill="#2563eb"><title>exact: 6, 5400</title></circle>
+<circle cx="373.3" cy="223.4" r="3" fill="#2563eb"><title>exact: 8, 6515</title></circle>
+<circle cx="550.0" cy="208.1" r="3" fill="#2563eb"><title>exact: 12, 7202</title></circle>
+<line x1="562" x2="580" y1="44" y2="44" stroke="#2563eb" stroke-width="2"/>
+<text x="586" y="48">exact</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="64.0,300.1 108.2,254.1 196.5,187.7 284.9,134.5 373.3,101.0 550.0,60.6"/>
+<circle cx="64.0" cy="300.1" r="3" fill="#dc2626"><title>ivf: 1, 3059</title></circle>
+<circle cx="108.2" cy="254.1" r="3" fill="#dc2626"><title>ivf: 2, 5129</title></circle>
+<circle cx="196.5" cy="187.7" r="3" fill="#dc2626"><title>ivf: 4, 8119</title></circle>
+<circle cx="284.9" cy="134.5" r="3" fill="#dc2626"><title>ivf: 6, 1.052e+04</title></circle>
+<circle cx="373.3" cy="101.0" r="3" fill="#dc2626"><title>ivf: 8, 1.202e+04</title></circle>
+<circle cx="550.0" cy="60.6" r="3" fill="#dc2626"><title>ivf: 12, 1.385e+04</title></circle>
+<line x1="562" x2="580" y1="62" y2="62" stroke="#dc2626" stroke-width="2"/>
+<text x="586" y="66">ivf</text>
+</svg>
